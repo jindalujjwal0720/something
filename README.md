@@ -202,13 +202,13 @@ git clone https://github.com/jindalujjwal0720/something.git . && rm -rf .git && 
 3. Install the dependencies in both server and web
 
 ```bash
-cd server && npm install && cd ../web && npm install && cd ..
+cd apps/server && npm install && cd ../web && npm install && cd ../..
 ```
 
 4. Create `.env` files in both server and web by copying the `.env.example` files
 
 ```bash
-cp server/.env.example server/.env && cp web/.env.example web/.env
+cp apps/server/.env.example apps/server/.env && cp apps/web/.env.example apps/web/.env
 ```
 
 5. Start the development server in both server and web (in separate terminals)

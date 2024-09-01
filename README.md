@@ -196,7 +196,7 @@ Certainly! Here’s a more detailed breakdown of the remaining features:
 2. Clone the repository and remove the `.git` directory to start fresh
 
 ```bash
-git clone https://jindalujjwal0720/something.git . && rm -rf .git && git init
+git clone https://github.com/jindalujjwal0720/something.git . && rm -rf .git && git init
 ```
 
 3. Install the dependencies in both server and web

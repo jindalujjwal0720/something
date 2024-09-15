@@ -9,7 +9,7 @@ const Pages = () => {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/settings/*" element={<ProtectedRoute />}>
-        <Route path="" element={<Settings />} />
+        <Route path="*" element={<Settings />} />
       </Route>
       <Route path="/auth/*" element={<Auth />} />
     </Routes>

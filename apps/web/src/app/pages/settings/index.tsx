@@ -4,9 +4,11 @@ import { Routes, Route } from 'react-router-dom';
 import Account from './account';
 import Security from './security';
 import Preferences from './preferences';
-import EnableTwoFactorAuthentication from './security/enable-2fa';
+import SetupTwoFactorAuthentication from './security/setup-2fa';
 import SetupAuthenticator from './security/setup-authenticator';
 import Navbar from '@/features/navbar/components/navbar';
+import UpdateRecoveryEmail from './security/update-recovery-email';
+import RegenerateBackupCodes from './security/regenerate-backup-codes';
 
 const sidebarNavItems = [
   { href: '/settings', title: 'Account' },
@@ -35,8 +37,16 @@ const Settings = () => {
               <Route path="" element={<Account />} />
               <Route path="/security">
                 <Route path="" element={<Security />} />
-                <Route path="2fa" element={<EnableTwoFactorAuthentication />} />
+                <Route path="2fa" element={<SetupTwoFactorAuthentication />} />
                 <Route path="authenticator" element={<SetupAuthenticator />} />
+                <Route
+                  path="recovery/email"
+                  element={<UpdateRecoveryEmail />}
+                />
+                <Route
+                  path="recovery/codes"
+                  element={<RegenerateBackupCodes />}
+                />
               </Route>
               <Route path="/preferences" element={<Preferences />} />
             </Routes>

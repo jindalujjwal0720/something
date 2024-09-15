@@ -22,7 +22,10 @@ import {
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils/errors';
-import { useSend2faOtpMutation, useVerify2faOtpMutation } from '../../api/auth';
+import {
+  useSend2faOtpToRecoveryEmailMutation,
+  useVerify2faOtpMutation,
+} from '../../api/auth';
 import { toast } from 'sonner';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Verify2faOtpResponse } from '../../types/api/auth';
@@ -32,31 +35,36 @@ import { convertDurationToReadable } from '@/utils/time';
 import useQueryParam from '@/hooks/useQueryParam';
 import { useCallback } from 'react';
 
-const verify2faOtpSchema = z.object({
+const verify2faRecoveryOtpSchema = z.object({
   otp: z.string().length(6, {
     message: 'OTP must be 6 characters',
   }),
 });
 
-type Verify2FAOTPFormValues = z.infer<typeof verify2faOtpSchema>;
+type Verify2FARecoveryOTPFormValues = z.infer<
+  typeof verify2faRecoveryOtpSchema
+>;
 
-interface Verify2FAOTPFormProps {
+interface Verify2FARecoveryOTPFormProps {
   onSuccess?: (data: Verify2faOtpResponse) => void;
 }
 
-const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
+const Verify2FARecoveryOTPForm = ({
+  onSuccess,
+}: Verify2FARecoveryOTPFormProps) => {
   const token = useQueryParam('token');
-  const form = useForm<Verify2FAOTPFormValues>({
-    resolver: zodResolver(verify2faOtpSchema),
+  const form = useForm<Verify2FARecoveryOTPFormValues>({
+    resolver: zodResolver(verify2faRecoveryOtpSchema),
     defaultValues: {
       otp: '',
     },
   });
-  const [sendOtp, { isLoading: isSendingOtp }] = useSend2faOtpMutation();
+  const [sendOtpToRecoveryEmail, { isLoading: isSendingOtp }] =
+    useSend2faOtpToRecoveryEmailMutation();
   const [verifyOTP, { isLoading: isVerifyingOtp }] = useVerify2faOtpMutation();
   const [timer, setTimer] = useTimer(0);
 
-  const onSubmit = async (data: Verify2FAOTPFormValues) => {
+  const onSubmit = async (data: Verify2FARecoveryOTPFormValues) => {
     try {
       const payload = await verifyOTP({
         otp: data.otp,
@@ -72,21 +80,24 @@ const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
 
   const handleSendOtp = useCallback(async () => {
     try {
-      const payload = await sendOtp({ token: token || '' }).unwrap();
+      const payload = await sendOtpToRecoveryEmail({
+        token: token || '',
+      }).unwrap();
       const seconds = (new Date(payload.expires).getTime() - Date.now()) / 1000;
       setTimer(seconds);
       toast.success(payload.message);
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
-  }, [sendOtp, token, setTimer]);
+  }, [sendOtpToRecoveryEmail, token, setTimer]);
 
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle className="text-2xl">Verify OTP</CardTitle>
         <CardDescription>
-          Please enter the One-time-password sent to your email address.
+          Please enter the One-time-password sent to your recovery email
+          address.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -150,4 +161,4 @@ const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
   );
 };
 
-export default Verify2FAOTPForm;
+export default Verify2FARecoveryOTPForm;

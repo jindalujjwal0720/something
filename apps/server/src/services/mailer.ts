@@ -298,4 +298,52 @@ export class MailerService {
       },
     } as ExtendedOptions);
   }
+
+  async sendRecoveryEmailOTP({ to, otp, user }: TwoFactorAuthOTPEmailDTO) {
+    return this.transporter.sendMail({
+      to,
+      from: `${env.mail.auth.name} <${env.mail.auth.user}>`,
+      subject: 'One-time password for account recovery',
+      template: '2fa-recovery-otp',
+      context: {
+        user: {
+          name: user.name,
+        },
+        otp,
+        expires_in: convertDurationToReadable(
+          env.twoFactorAuth.otp.expiresInSeconds,
+        ),
+        company: {
+          name: meta.company.name,
+          logo_url: meta.company.logo,
+        },
+      },
+    } as ExtendedOptions);
+  }
+
+  async sendRecoveryEmailVerificationEmail({
+    to,
+    emailVerificationToken,
+    user,
+  }: EmailVerificationEmailDTO) {
+    return this.transporter.sendMail({
+      to,
+      from: `${env.mail.auth.name} <${env.mail.auth.user}>`,
+      subject: 'Email verification',
+      template: 'recovery-email-verification',
+      context: {
+        user: {
+          name: user.name,
+        },
+        recovery_email_verification_url: `${env.auth.recoveryEmailVerificationUrl}?token=${emailVerificationToken}`,
+        expires_in: convertDurationToReadable(
+          env.auth.emailVerificationTokenExpiresInSeconds,
+        ),
+        company: {
+          name: meta.company.name,
+          logo_url: meta.company.logo,
+        },
+      },
+    } as ExtendedOptions);
+  }
 }

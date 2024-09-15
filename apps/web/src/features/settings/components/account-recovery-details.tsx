@@ -6,9 +6,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { toast } from '@/components/ui/use-toast';
+import { useGetMeQuery } from '@/features/auth/api/auth';
+import { CheckCircledIcon } from '@radix-ui/react-icons';
+import { useNavigate } from 'react-router-dom';
 
 const AccountRecoveryDetails = () => {
+  const { data: { user } = {} } = useGetMeQuery();
+  const navigate = useNavigate();
+
   return (
     <Card>
       <CardHeader>
@@ -22,58 +27,42 @@ const AccountRecoveryDetails = () => {
         <div className="divide-y-2 space-y-4">
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <h4 className="text-sm font-medium">
-                Add account recovery email
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Add an email address to recover your account.
+              <h4 className="text-sm font-medium">Recovery email address</h4>
+              <p className="text-sm text-muted-foreground flex gap-1 items-center">
+                <span>
+                  {user?.recoveryDetails?.email ||
+                    'Add an email address to recover your account.'}
+                </span>
+                {user?.recoveryDetails?.emailVerified && (
+                  <CheckCircledIcon className="size-4 text-green-600" />
+                )}
               </p>
             </div>
             <Button
               variant="ghost"
-              onClick={() =>
-                toast({
-                  title: 'Account recovery email added',
-                })
-              }
+              onClick={() => navigate('/settings/security/recovery/email')}
             >
-              Add recovery email
-            </Button>
-          </div>
-          <div className="flex pt-4 items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h4 className="text-sm font-medium">Add recovery phone number</h4>
-              <p className="text-sm text-muted-foreground">
-                Add a phone number to recover your account.
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() =>
-                toast({
-                  title: 'Account recovery phone number added',
-                })
-              }
-            >
-              Add recovery phone
+              {user?.recoveryDetails?.email ? 'Change' : 'Add'} recovery email
             </Button>
           </div>
           <div className="flex pt-4 items-center justify-between gap-4">
             <div className="space-y-1">
               <h4 className="text-sm font-medium">Backup codes</h4>
               <p className="text-sm text-muted-foreground">
-                Generate backup codes to recover your account.
+                {typeof user?.recoveryDetails?.backupCodesUsedCount !==
+                'undefined'
+                  ? `${user?.recoveryDetails?.backupCodesUsedCount} backup codes used`
+                  : 'Generate backup codes to recover your account.'}
               </p>
             </div>
             <Button
               variant="ghost"
-              onClick={() =>
-                toast({
-                  title: 'Recovery codes generated',
-                })
-              }
+              onClick={() => navigate('/settings/security/recovery/codes')}
             >
-              Generate codes
+              {typeof user?.recoveryDetails?.backupCodesUsedCount !==
+              'undefined'
+                ? 'Regenerate backup codes'
+                : 'Generate backup codes'}
             </Button>
           </div>
         </div>

@@ -20,4 +20,17 @@ export class UserController {
       next(err);
     }
   }
+
+  public async updateMe(req: e.Request, res: e.Response, next: e.NextFunction) {
+    try {
+      const { email } = req.user;
+      const updates = req.body || {};
+
+      const user = await this.userService.updateUserByEmail(email, updates);
+
+      res.status(200).json({ user });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

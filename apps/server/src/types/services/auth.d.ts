@@ -93,3 +93,19 @@ export interface Setup2FAAuthenticatorDTO {
   email: string;
   password: string;
 }
+
+export interface UpdateRecoveryEmailDTO {
+  email: string;
+  password: string;
+  newRecoveryEmail: string;
+}
+
+export interface RegenerateRecoveryCodesDTO {
+  email: string;
+  password: string;
+}
+
+export interface UserRecoveryCodeLoginDTO {
+  token: string;
+  code: string;
+}

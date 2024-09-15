@@ -13,15 +13,18 @@ import {
   Disable2FADTO,
   Enable2FAConfig,
   Enable2FADTO,
+  RegenerateRecoveryCodesDTO,
   RequestPasswordResetDTO,
   ResetPasswordConfig,
   ResetPasswordDTO,
   Setup2FAAuthenticatorDTO,
   TokenPayload,
+  UpdateRecoveryEmailDTO,
   UserLoginConfig,
   UserLoginDTO,
   UserLoginResponse,
   UserOTPLoginDTO,
+  UserRecoveryCodeLoginDTO,
   UserRefreshTokensConfig,
   UserRegisterDTO,
 } from '../types/services/auth.d';
@@ -117,6 +120,12 @@ export class AuthService {
     if (user.twoFactorAuth?.totp) {
       user.twoFactorAuth.totp.secret = undefined;
     }
+    // Recovery details
+    if (user.recoveryDetails) {
+      user.recoveryDetails.backupCodesUsedCount =
+        user.recoveryDetails.backupCodes.filter((code) => code.usedAt).length;
+      user.recoveryDetails.backupCodes = [];
+    }
     return user;
   }
 
@@ -183,6 +192,7 @@ export class AuthService {
 
   private async encrypt2FATOTPSecret(secret: string): Promise<string> {
     const key = env.twoFactorAuth.totp.encryptionSecret;
+    console.log(secret);
     if (!key) {
       throw new AppError(
         CommonErrors.InternalServerError.name,
@@ -192,7 +202,7 @@ export class AuthService {
       );
     }
     const derivedKey = crypto.scryptSync(key, 'salt', 32);
-    const iv = crypto.randomBytes(16);
+    const iv = Buffer.from(crypto.randomBytes(16));
     const cipher = crypto.createCipheriv('aes-256-cbc', derivedKey, iv);
     let encrypted = cipher.update(secret, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -211,11 +221,88 @@ export class AuthService {
       );
     }
     const derivedKey = crypto.scryptSync(key, 'salt', 32);
-    const [iv, encrypted] = encryptedSecret.split(':');
+    let [iv, encrypted]: (string | Buffer)[] = encryptedSecret.split(':');
+    iv = Buffer.from(iv, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', derivedKey, iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    console.log(decrypted);
+    return decrypted;
+  }
+
+  private async generateRecoveryEmailVerificationToken(
+    payload: TokenPayload & { recoveryEmail: string },
+  ): Promise<string> {
+    return jwt.sign(payload, env.auth.recoveryEmailVerificationTokenSecret, {
+      expiresIn: env.auth.recoveryEmailVerificationTokenExpiresInSeconds,
+    });
+  }
+
+  private async verifyRecoveryEmailVerificationToken(
+    token: string,
+  ): Promise<TokenPayload & { recoveryEmail: string }> {
+    try {
+      const payload = jwt.verify(
+        token,
+        env.auth.recoveryEmailVerificationTokenSecret,
+      );
+      return payload as TokenPayload & { recoveryEmail: string };
+    } catch (_err) {
+      throw new AppError(
+        CommonErrors.Unauthorized.name,
+        CommonErrors.Unauthorized.statusCode,
+        'Invalid or expired recovery email verification token',
+      );
+    }
+  }
+
+  private async encryptBackupCode(code: string): Promise<string> {
+    const key = env.auth.backupCodeEncryptionSecret;
+    if (!key) {
+      throw new AppError(
+        CommonErrors.InternalServerError.name,
+        CommonErrors.InternalServerError.statusCode,
+        'Encryption secret for backup code not found',
+        false,
+      );
+    }
+    const derivedKey = crypto.scryptSync(key, 'salt', 32);
+    const iv = Buffer.from(crypto.randomBytes(16));
+    const cipher = crypto.createCipheriv('aes-256-cbc', derivedKey, iv);
+    let encrypted = cipher.update(code, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    encrypted = `${iv.toString('hex')}:${encrypted}`;
+    return encrypted;
+  }
+
+  private async decryptBackupCode(encryptedCode: string): Promise<string> {
+    const key = env.auth.backupCodeEncryptionSecret;
+    if (!key) {
+      throw new AppError(
+        CommonErrors.InternalServerError.name,
+        CommonErrors.InternalServerError.statusCode,
+        'Encryption secret for backup code not found',
+        false,
+      );
+    }
+    const derivedKey = crypto.scryptSync(key, 'salt', 32);
+    let [iv, encrypted]: (string | Buffer)[] = encryptedCode.split(':');
+    iv = Buffer.from(iv, 'hex');
     const decipher = crypto.createDecipheriv('aes-256-cbc', derivedKey, iv);
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;
+  }
+
+  private async generateBackupCodes(): Promise<string[]> {
+    const codes: string[] = [];
+    for (let i = 0; i < 10; i++) {
+      // 8 characters long
+      const code = crypto.randomBytes(4).toString('hex');
+      const encryptedCode = await this.encryptBackupCode(code);
+      codes.push(encryptedCode);
+    }
+    return codes;
   }
 
   public async register(userDTO: UserRegisterDTO): Promise<{ user: IUser }> {
@@ -711,11 +798,11 @@ export class AuthService {
   public async enable2FA(
     userDTO: Enable2FADTO,
     config: Enable2FAConfig,
-  ): Promise<void> {
+  ): Promise<{ recoveryCodes: string[] }> {
     const { email, password } = userDTO;
     const existingUser = await this.userModel
       .findOne({ email })
-      .select('+twoFactorAuth +passwordHash');
+      .select('+twoFactorAuth +passwordHash +recoveryDetails');
     if (!existingUser) {
       throw new AppError(
         CommonErrors.NotFound.name,
@@ -749,6 +836,10 @@ export class AuthService {
       otp: { enabled: true }, // OTP based 2FA enabled by default
       totp: { enabled: false },
     };
+    const backupCodes = await this.generateBackupCodes();
+    existingUser.recoveryDetails = {
+      backupCodes: backupCodes.map((code) => ({ code })),
+    };
     await existingUser.save();
 
     // Publish events
@@ -757,6 +848,11 @@ export class AuthService {
       deviceInfo: config.deviceInfo,
       ipInfo: config.ipInfo,
     });
+
+    const decryptedCodes = await Promise.all(
+      backupCodes.map(this.decryptBackupCode),
+    );
+    return { recoveryCodes: decryptedCodes };
   }
 
   public async disable2FA(
@@ -766,7 +862,7 @@ export class AuthService {
     const { email, password } = userDTO;
     const existingUser = await this.userModel
       .findOne({ email })
-      .select('+twoFactorAuth +passwordHash');
+      .select('+twoFactorAuth +passwordHash +recoveryDetails');
     if (!existingUser) {
       throw new AppError(
         CommonErrors.NotFound.name,
@@ -795,9 +891,18 @@ export class AuthService {
       );
     }
 
-    existingUser.twoFactorAuth = undefined;
+    existingUser.twoFactorAuth.enabled = false;
+    // Disable OTP if enabled
+    existingUser.twoFactorAuth.otp.hash = undefined;
+    existingUser.twoFactorAuth.otp.expires = undefined;
+    // Disable TOTP if enabled
+    existingUser.twoFactorAuth.totp.enabled = false;
+    existingUser.twoFactorAuth.totp.secret = undefined;
+    // Clear recovery codes
+    existingUser.recoveryDetails = {
+      backupCodes: [],
+    };
     await existingUser.save();
-
     // Publish events
     this.publisher.auth.publishUser2FADisabledEvent({
       user: { name: existingUser.name, email: existingUser.email },
@@ -811,7 +916,7 @@ export class AuthService {
 
     const existingUser = await this.userModel
       .findOne({ email })
-      .select('+twoFactorAuth');
+      .select('+twoFactorAuth +recoveryDetails');
     if (!existingUser) {
       throw new AppError(
         CommonErrors.NotFound.name,
@@ -832,6 +937,9 @@ export class AuthService {
     methods.push('recovery'); // Recovery codes are always available
     if (existingUser.twoFactorAuth.totp?.enabled) {
       methods.push('totp');
+    }
+    if (existingUser.recoveryDetails?.emailVerified) {
+      methods.push('recovery-email');
     }
 
     return methods;
@@ -1002,6 +1110,74 @@ export class AuthService {
 
     // Publish events
     this.publisher.auth.publishUser2faOtpGeneratedEvent({
+      user,
+      otp,
+    });
+
+    return { expires: existingUser.twoFactorAuth.otp.expires };
+  }
+
+  public async send2FALoginOTPToRecoveryEmail(
+    token: string,
+  ): Promise<{ expires: Date }> {
+    const { email } = await this.verify2FAToken(token);
+
+    const existingUser = await this.userModel
+      .findOne({ email })
+      .select('+twoFactorAuth +recoveryDetails');
+    if (!existingUser) {
+      throw new AppError(
+        CommonErrors.NotFound.name,
+        CommonErrors.NotFound.statusCode,
+        'User not found',
+      );
+    }
+
+    if (
+      !existingUser.twoFactorAuth?.enabled ||
+      !existingUser.twoFactorAuth.otp.enabled
+    ) {
+      throw new AppError(
+        CommonErrors.BadRequest.name,
+        CommonErrors.BadRequest.statusCode,
+        'OTP based 2FA not enabled for this user',
+      );
+    }
+
+    if (
+      !existingUser.recoveryDetails?.email ||
+      !existingUser.recoveryDetails?.emailVerified
+    ) {
+      throw new AppError(
+        CommonErrors.BadRequest.name,
+        CommonErrors.BadRequest.statusCode,
+        'Recovery email not verified',
+      );
+    }
+
+    if (
+      existingUser.twoFactorAuth.otp.expires &&
+      existingUser.twoFactorAuth.otp.expires > new Date()
+    ) {
+      throw new AppError(
+        CommonErrors.BadRequest.name,
+        CommonErrors.BadRequest.statusCode,
+        'You already have an active OTP. Please wait for it to expire.',
+      );
+    }
+
+    const otp = await this.generateRandomOTP();
+    existingUser.twoFactorAuth.otp.hash = await this.hashPassword(otp);
+    existingUser.twoFactorAuth.otp.expires = new Date(
+      Date.now() + env.twoFactorAuth.otp.expiresInSeconds * 1000,
+    );
+    await existingUser.save();
+
+    const user = this.excludeSensitiveFields(existingUser.toObject());
+
+    // Publish events
+    this.publisher.auth.publishUser2faRecoveryOtpGeneratedEvent({
+      recoveryEmail: existingUser.recoveryDetails.email,
       user,
       otp,
     });
@@ -1181,7 +1357,7 @@ export class AuthService {
     accessToken: string;
     refreshToken: string;
   }> {
-    const { token } = userDTO;
+    const { token, otp } = userDTO;
     const twoFactorAuthPayload = await this.verify2FAToken(token);
 
     const existingUser = await this.userModel
@@ -1220,7 +1396,7 @@ export class AuthService {
     const secret = await this.decrypt2FATOTPSecret(
       existingUser.twoFactorAuth.totp.secret,
     );
-    const otpMatch = authenticator.verify({ token, secret });
+    const otpMatch = authenticator.verify({ token: otp, secret });
     if (!otpMatch) {
       throw new AppError(
         CommonErrors.Unauthorized.name,
@@ -1271,5 +1447,219 @@ export class AuthService {
 
     const encodedRefreshToken = await this.encodeRefreshToken(refreshToken);
     return { user: userObject, accessToken, refreshToken: encodedRefreshToken };
+  }
+
+  public async requestUpdateRecoveryEmail(
+    userDTO: UpdateRecoveryEmailDTO,
+  ): Promise<void> {
+    const existingUser = await this.userModel
+      .findOne({ email: userDTO.email })
+      .select('+passwordHash +recoveryDetails');
+    if (!existingUser) {
+      throw new AppError(
+        CommonErrors.NotFound.name,
+        CommonErrors.NotFound.statusCode,
+        'User not found',
+      );
+    }
+
+    const passwordsMatch = await this.comparePasswords(
+      userDTO.password,
+      existingUser.passwordHash || '',
+    );
+    if (!passwordsMatch) {
+      throw new AppError(
+        CommonErrors.Unauthorized.name,
+        CommonErrors.Unauthorized.statusCode,
+        'Incorrect password',
+      );
+    }
+
+    if (existingUser.recoveryDetails?.email === userDTO.newRecoveryEmail) {
+      throw new AppError(
+        CommonErrors.BadRequest.name,
+        CommonErrors.BadRequest.statusCode,
+        'Recovery email is already set for this email',
+      );
+    }
+
+    const payload = await this.generatePayload(existingUser);
+    const recoveryEmailVerificationToken =
+      await this.generateRecoveryEmailVerificationToken({
+        ...payload,
+        recoveryEmail: userDTO.newRecoveryEmail,
+      });
+
+    // Publish events
+    this.publisher.auth.publishUserRecoveryEmailUpdateRequestedEvent({
+      user: { name: existingUser.name, email: existingUser.email },
+      recoveryEmail: userDTO.newRecoveryEmail,
+      emailVerificationToken: recoveryEmailVerificationToken,
+    });
+  }
+
+  public async verifyAndUpdateRecoveryEmail(token: string): Promise<void> {
+    const payload = await this.verifyRecoveryEmailVerificationToken(token);
+
+    const existingUser = await this.userModel
+      .findOne({ email: payload.email })
+      .select('+recoveryDetails');
+    if (!existingUser) {
+      throw new AppError(
+        CommonErrors.NotFound.name,
+        CommonErrors.NotFound.statusCode,
+        'User not found',
+      );
+    }
+
+    existingUser.recoveryDetails = {
+      ...(existingUser.recoveryDetails || {
+        backupCodes: [],
+      }),
+      email: payload.recoveryEmail,
+      emailVerified: true,
+    };
+    await existingUser.save();
+  }
+
+  public async regenerateRecoveryCodes(
+    userDTO: RegenerateRecoveryCodesDTO,
+  ): Promise<{ recoveryCodes: string[] }> {
+    const existingUser = await this.userModel
+      .findOne({ email: userDTO.email })
+      .select('+passwordHash +recoveryDetails');
+    if (!existingUser) {
+      throw new AppError(
+        CommonErrors.NotFound.name,
+        CommonErrors.NotFound.statusCode,
+        'User not found',
+      );
+    }
+
+    const passwordsMatch = await this.comparePasswords(
+      userDTO.password,
+      existingUser.passwordHash || '',
+    );
+    if (!passwordsMatch) {
+      throw new AppError(
+        CommonErrors.Unauthorized.name,
+        CommonErrors.Unauthorized.statusCode,
+        'Incorrect password',
+      );
+    }
+
+    const recoveryCodes = await this.generateBackupCodes();
+    existingUser.recoveryDetails = {
+      ...(existingUser.recoveryDetails || {
+        emailVerified: false,
+      }),
+      backupCodes: recoveryCodes.map((code) => ({ code })),
+    };
+    await existingUser.save();
+
+    const decryptedCodes = await Promise.all(
+      recoveryCodes.map(this.decryptBackupCode),
+    );
+
+    return { recoveryCodes: decryptedCodes };
+  }
+
+  public async loginWithRecoveryCode(
+    userDTO: UserRecoveryCodeLoginDTO,
+    config: UserLoginConfig,
+  ): Promise<{
+    user: IUser;
+    accessToken: string;
+    refreshToken: string;
+  }> {
+    const { token, code: recoveryCode } = userDTO;
+    const payload = await this.verifyRecoveryEmailVerificationToken(token);
+
+    const existingUser = await this.userModel
+      .findOne({ email: payload.email })
+      .select('+recoveryDetails +refreshTokens');
+    if (!existingUser) {
+      throw new AppError(
+        CommonErrors.NotFound.name,
+        CommonErrors.NotFound.statusCode,
+        'User not found',
+      );
+    }
+
+    if (
+      !existingUser.recoveryDetails?.emailVerified ||
+      !existingUser.recoveryDetails.backupCodes
+    ) {
+      throw new AppError(
+        CommonErrors.BadRequest.name,
+        CommonErrors.BadRequest.statusCode,
+        'Recovery email not verified or backup codes not generated',
+      );
+    }
+
+    const decryptedBackupCodes = await Promise.all(
+      existingUser.recoveryDetails.backupCodes.map((bc) =>
+        this.decryptBackupCode(bc.code),
+      ),
+    );
+    const backupCodeIndex = decryptedBackupCodes.findIndex(
+      (code) => code === recoveryCode,
+    );
+    if (backupCodeIndex === -1) {
+      throw new AppError(
+        CommonErrors.Unauthorized.name,
+        CommonErrors.Unauthorized.statusCode,
+        'Invalid recovery code',
+      );
+    }
+
+    // mark the recovery code as used with a timestamp
+    existingUser.recoveryDetails.backupCodes[backupCodeIndex].usedAt =
+      new Date();
+
+    // Filter expired refresh tokens
+    existingUser.refreshTokens = await this.filterExpiredRefreshTokens(
+      existingUser.refreshTokens || [],
+    );
+    // Check if device already present
+    const existingRefreshToken = existingUser.refreshTokens?.find((rt) =>
+      this.checkSameDevice(config.deviceInfo, rt),
+    );
+    if (existingRefreshToken) {
+      const payload = await this.generatePayload(existingUser);
+      const accessToken = await this.generateAccessToken(payload);
+      const encodedRefreshToken =
+        await this.encodeRefreshToken(existingRefreshToken);
+
+      const userObject = this.excludeSensitiveFields(existingUser.toObject());
+      return {
+        user: userObject,
+        accessToken,
+        refreshToken: encodedRefreshToken,
+      };
+    }
+
+    const newRefreshToken = await this.generateRefreshToken(
+      payload,
+      config.deviceInfo,
+    );
+
+    existingUser.refreshTokens.push(newRefreshToken);
+    await existingUser.save();
+
+    const userObject = this.excludeSensitiveFields(existingUser.toObject());
+
+    // Publish events
+    this.publisher.auth.publishUserLoggedInEvent({
+      user: { name: userObject.name, email: userObject.email },
+      deviceInfo: config.deviceInfo,
+    });
+
+    const encodedRefreshToken = await this.encodeRefreshToken(newRefreshToken);
+    return {
+      user: userObject,
+      accessToken: '',
+      refreshToken: encodedRefreshToken,
+    };
   }
 }

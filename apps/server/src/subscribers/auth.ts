@@ -7,6 +7,8 @@ import {
   UserPasswordChangeRequestedEventData,
   UserRegisteredEventData,
   User2faOtpGeneratedEventData,
+  UserRecoveryEmailUpdateRequestedEventData,
+  User2faRecoveryOtpGeneratedEventData,
 } from '../types/events/auth';
 import { errorLogger } from '../utils/logger';
 import { MailerService } from '../services/mailer';
@@ -41,6 +43,14 @@ export class AuthSubscriber {
     emitter.on(
       'auth:user-2fa-otp-generated',
       this.consumeUser2faOtpGeneratedEvent.bind(this),
+    );
+    emitter.on(
+      'auth:user-2fa-recovery-otp-generated',
+      this.consumeUser2faRecoveryOtpGeneratedEvent.bind(this),
+    );
+    emitter.on(
+      'auth:user-recovery-email-update-requested',
+      this.consumeUserRecoveryEmailUpdateRequestedEvent.bind(this),
     );
   }
 
@@ -130,6 +140,34 @@ export class AuthSubscriber {
         to: data.user.email,
         user: data.user,
         otp: data.otp,
+      });
+    } catch (err) {
+      errorLogger.error(`Error sending email to ${data.user.email}`, err);
+    }
+  }
+
+  public async consumeUser2faRecoveryOtpGeneratedEvent(
+    data: User2faRecoveryOtpGeneratedEventData,
+  ) {
+    try {
+      await this.mailerService.sendRecoveryEmailOTP({
+        to: data.recoveryEmail,
+        user: data.user,
+        otp: data.otp,
+      });
+    } catch (err) {
+      errorLogger.error(`Error sending email to ${data.user.email}`, err);
+    }
+  }
+
+  public async consumeUserRecoveryEmailUpdateRequestedEvent(
+    data: UserRecoveryEmailUpdateRequestedEventData,
+  ) {
+    try {
+      await this.mailerService.sendRecoveryEmailVerificationEmail({
+        to: data.user.email,
+        user: data.user,
+        emailVerificationToken: data.emailVerificationToken,
       });
     } catch (err) {
       errorLogger.error(`Error sending email to ${data.user.email}`, err);

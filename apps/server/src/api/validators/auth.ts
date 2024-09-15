@@ -118,6 +118,12 @@ export class AuthValidators {
     }),
   });
 
+  public validate2FARecoveryOTPSendData = celebrate({
+    [Segments.BODY]: Joi.object().keys({
+      token: Joi.string().required(),
+    }),
+  });
+
   public validate2FAAuthenticatorSetupData = celebrate({
     [Segments.BODY]: Joi.object().keys({
       email: Joi.string().email().required(),
@@ -136,6 +142,34 @@ export class AuthValidators {
     [Segments.BODY]: Joi.object().keys({
       token: Joi.string().required(),
       otp: Joi.string().required(),
+    }),
+  });
+
+  public validateUpdateRecoveryEmailData = celebrate({
+    [Segments.BODY]: Joi.object().keys({
+      email: Joi.string().email().required(),
+      password: Joi.string().required(),
+      newRecoveryEmail: Joi.string().email().required(),
+    }),
+  });
+
+  public validateVerifyRecoveryEmailData = celebrate({
+    [Segments.QUERY]: Joi.object().keys({
+      token: Joi.string().required(),
+    }),
+  });
+
+  public validateRegenerateRecoveryCodesData = celebrate({
+    [Segments.BODY]: Joi.object().keys({
+      email: Joi.string().email().required(),
+      password: Joi.string().required(),
+    }),
+  });
+
+  public validateLoginWithRecoveryCodeData = celebrate({
+    [Segments.BODY]: Joi.object().keys({
+      token: Joi.string().required(),
+      code: Joi.string().required(),
     }),
   });
 }

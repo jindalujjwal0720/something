@@ -31,6 +31,14 @@ import {
   LogoutResponse,
   GetMeResponse,
   Get2FALoginMethodsResponse,
+  UpdateMeResponse,
+  UpdateMeDTO,
+  RequestRecoveryEmailUpdateResponse,
+  RequestRecoveryEmailUpdateDTO,
+  RegenerateRecoveryCodesResponse,
+  RegenerateRecoveryCodesDTO,
+  LoginWithRecoveryCodeResponse,
+  LoginWithRecoveryCodeDTO,
 } from '../types/api/auth';
 
 const authApi = api.injectEndpoints({
@@ -39,6 +47,15 @@ const authApi = api.injectEndpoints({
       query: () => '/v1/users/me',
       providesTags: ['Auth'],
     }),
+    updateMe: builder.mutation<UpdateMeResponse, UpdateMeDTO>({
+      query: ({ user }) => ({
+        url: '/v1/users/me',
+        method: 'PATCH',
+        body: user,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
+
     register: builder.mutation<RegisterResponse, RegisterDTO>({
       query: (data) => ({
         url: '/v1/auth/register',
@@ -100,7 +117,7 @@ const authApi = api.injectEndpoints({
     }),
     enable2FA: builder.mutation<Enable2FAResponse, Enable2FADTO>({
       query: (data) => ({
-        url: '/v1/auth/2fa/enable',
+        url: '/v1/auth/2fa',
         method: 'POST',
         body: data,
       }),
@@ -108,8 +125,8 @@ const authApi = api.injectEndpoints({
     }),
     disable2FA: builder.mutation<Disable2FAResponse, Disable2FADTO>({
       query: (data) => ({
-        url: '/v1/auth/2fa/disable',
-        method: 'POST',
+        url: '/v1/auth/2fa',
+        method: 'DELETE',
         body: data,
       }),
       invalidatesTags: ['Auth'],
@@ -124,6 +141,16 @@ const authApi = api.injectEndpoints({
     send2faOtp: builder.mutation<Send2faOtpResponse, Send2faOtpDTO>({
       query: (data) => ({
         url: '/v1/auth/2fa/otp',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    send2faOtpToRecoveryEmail: builder.mutation<
+      Send2faOtpResponse,
+      Send2faOtpDTO
+    >({
+      query: (data) => ({
+        url: '/v1/auth/2fa/otp/recovery',
         method: 'POST',
         body: data,
       }),
@@ -173,11 +200,45 @@ const authApi = api.injectEndpoints({
       }),
       invalidatesTags: ['Auth'],
     }),
+    requestUpdateRecoveryEmail: builder.mutation<
+      RequestRecoveryEmailUpdateResponse,
+      RequestRecoveryEmailUpdateDTO
+    >({
+      query: (data) => ({
+        url: '/v1/auth/recovery/email',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
+    regenerateRecoveryCodes: builder.mutation<
+      RegenerateRecoveryCodesResponse,
+      RegenerateRecoveryCodesDTO
+    >({
+      query: (data) => ({
+        url: '/v1/auth/recovery/codes',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    loginWithRecoveryCode: builder.mutation<
+      LoginWithRecoveryCodeResponse,
+      LoginWithRecoveryCodeDTO
+    >({
+      query: (data) => ({
+        url: '/v1/auth/recovery/codes/verify',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
   }),
 });
 
 export const {
   useGetMeQuery,
+  useUpdateMeMutation,
+
   useRegisterMutation,
   useLoginMutation,
   useLogoutMutation,
@@ -185,13 +246,19 @@ export const {
   useRequestResetPasswordMutation,
   useVerifyEmailMutation,
   useResendEmailVerificationMutation,
+
   useEnable2FAMutation,
   useDisable2FAMutation,
   useGet2FALoginMethodsQuery,
   useSend2faOtpMutation,
+  useSend2faOtpToRecoveryEmailMutation,
   useVerify2faOtpMutation,
   useEnable2faTotpMutation,
   useDisable2faTotpMutation,
   useRegenerate2faTotpMutation,
   useVerify2faTotpMutation,
+
+  useRequestUpdateRecoveryEmailMutation,
+  useRegenerateRecoveryCodesMutation,
+  useLoginWithRecoveryCodeMutation,
 } = authApi;

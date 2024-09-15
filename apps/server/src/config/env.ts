@@ -53,6 +53,18 @@ export default {
         process.env.AUTH_RESET_PASSWORD_TOKEN_EXPIRES_IN_SECONDS ||
           `${15 * 60}`,
       ) || 15 * 60,
+
+    recoveryEmailVerificationUrl:
+      process.env.RECOVERY_EMAIL_VERIFICATION_API_URL,
+    recoveryEmailVerificationTokenExpiresInSeconds:
+      parseInt(
+        process.env.RECOVERY_EMAIL_VERIFICATION_TOKEN_EXPIRES_IN_SECONDS ||
+          `${15 * 60}`,
+      ) || 15 * 60,
+    recoveryEmailVerificationTokenSecret:
+      process.env.RECOVERY_EMAIL_VERIFICATION_TOKEN_SECRET || 'secret',
+    backupCodeEncryptionSecret:
+      process.env.BACKUP_CODE_ENCRYPTION_SECRET || 'secret',
   },
   twoFactorAuth: {
     tokenSecret: process.env.TWO_FACTOR_AUTH_TOKEN_SECRET || 'secret',

@@ -22,12 +22,12 @@ import {
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils/errors';
-import useLocationState from '@/hooks/useLocationState';
 import { toast } from 'sonner';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Link } from 'react-router-dom';
 import { useVerify2faTotpMutation } from '../../api/auth';
 import { Verify2faTotpResponse } from '../../types/api/auth';
+import useQueryParam from '@/hooks/useQueryParam';
 
 const verifu2faAuthenticatorSchema = z.object({
   otp: z.string().length(6, {
@@ -46,7 +46,7 @@ interface Verify2faAuthenticatorFormProps {
 const Verify2faAuthenticatorForm = ({
   onSuccess,
 }: Verify2faAuthenticatorFormProps) => {
-  const token = useLocationState('token');
+  const token = useQueryParam('token');
   const form = useForm<Verify2faAuthenticatorFormValues>({
     resolver: zodResolver(verifu2faAuthenticatorSchema),
     defaultValues: {
@@ -57,7 +57,10 @@ const Verify2faAuthenticatorForm = ({
 
   const onSubmit = async (data: Verify2faAuthenticatorFormValues) => {
     try {
-      const payload = await verifyOTP({ otp: data.otp, token }).unwrap();
+      const payload = await verifyOTP({
+        otp: data.otp,
+        token: token || '',
+      }).unwrap();
       if (onSuccess) {
         onSuccess(payload);
       }
@@ -111,9 +114,13 @@ const Verify2faAuthenticatorForm = ({
           </form>
         </Form>
         <div className="mt-4 text-center text-sm">
-          Sign in with a different method?{' '}
+          Choose a{' '}
+          <Link to={`/auth/2fa?token=${token}`} className="underline">
+            different method
+          </Link>{' '}
+          or go back to{' '}
           <Link to="/auth/login" className="underline">
-            Login
+            login
           </Link>
         </div>
       </CardContent>

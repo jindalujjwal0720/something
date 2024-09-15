@@ -9,6 +9,8 @@ import {
   User2faOtpGeneratedEventData,
   User2FAEnabledEventData,
   User2FADisabledEventData,
+  UserRecoveryEmailUpdateRequestedEventData,
+  User2faRecoveryOtpGeneratedEventData,
 } from '../types/events/auth';
 
 export class AuthEventsPublisher {
@@ -56,5 +58,17 @@ export class AuthEventsPublisher {
 
   public publishUser2faOtpGeneratedEvent(data: User2faOtpGeneratedEventData) {
     this.emitter.emit('auth:user-2fa-otp-generated', data);
+  }
+
+  public publishUser2faRecoveryOtpGeneratedEvent(
+    data: User2faRecoveryOtpGeneratedEventData,
+  ) {
+    this.emitter.emit('auth:user-2fa-recovery-otp-generated', data);
+  }
+
+  public publishUserRecoveryEmailUpdateRequestedEvent(
+    data: UserRecoveryEmailUpdateRequestedEventData,
+  ) {
+    this.emitter.emit('auth:user-recovery-email-update-requested', data);
   }
 }

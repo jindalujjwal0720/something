@@ -61,14 +61,14 @@ router.post(
 
 // 2FA
 router.post(
-  '/2fa/enable',
+  '/2fa',
   rateLimiterMiddleware.limiter,
   userAgentMiddleware.extractDeviceInfo.bind(userAgentMiddleware),
   authValidators.validate2FAEnableData.bind(authValidators),
   authController.enable2FA.bind(authController),
 );
-router.post(
-  '/2fa/disable',
+router.delete(
+  '/2fa',
   rateLimiterMiddleware.limiter,
   userAgentMiddleware.extractDeviceInfo.bind(userAgentMiddleware),
   authValidators.validate2FADisableData.bind(authValidators),
@@ -85,6 +85,12 @@ router.post(
   rateLimiterMiddleware.emailLimiter,
   authValidators.validate2FAOTPSendData.bind(authValidators),
   authController.send2FAOTP.bind(authController),
+);
+router.post(
+  '/2fa/otp/recovery',
+  rateLimiterMiddleware.emailLimiter,
+  authValidators.validate2FARecoveryOTPSendData.bind(authValidators),
+  authController.send2FARecoveryOTP.bind(authController),
 );
 router.post(
   '/2fa/otp/verify',
@@ -115,6 +121,30 @@ router.post(
   rateLimiterMiddleware.limiter,
   authValidators.validate2FATOTPLoginData.bind(authValidators),
   authController.loginWith2FATOTP.bind(authController),
+);
+router.put(
+  '/recovery/email',
+  rateLimiterMiddleware.emailLimiter,
+  authValidators.validateUpdateRecoveryEmailData.bind(authValidators),
+  authController.requestUpdateRecoveryEmail.bind(authController),
+);
+router.get(
+  '/recovery/email/verify',
+  rateLimiterMiddleware.limiter,
+  authValidators.validateVerifyRecoveryEmailData.bind(authValidators),
+  authController.verifyRecoveryEmail.bind(authController),
+);
+router.post(
+  '/recovery/codes',
+  rateLimiterMiddleware.limiter,
+  authValidators.validateRegenerateRecoveryCodesData.bind(authValidators),
+  authController.regenerateRecoveryCodes.bind(authController),
+);
+router.post(
+  '/recovery/codes/verify',
+  rateLimiterMiddleware.limiter,
+  authValidators.validateLoginWithRecoveryCodeData.bind(authValidators),
+  authController.loginWithRecoveryCode.bind(authController),
 );
 
 export default router;

@@ -349,12 +349,12 @@ export class AuthController {
       const data = req.body;
       const { deviceInfo, ipInfo } = req;
 
-      await this.authService.enable2FA(data, {
+      const { recoveryCodes } = await this.authService.enable2FA(data, {
         deviceInfo,
         ipInfo,
       });
 
-      return res.status(200).json({ message: '2FA enabled successfully' });
+      return res.status(200).json({ recoveryCodes });
     } catch (err) {
       next(err);
     }
@@ -470,6 +470,25 @@ export class AuthController {
     }
   }
 
+  public async send2FARecoveryOTP(
+    req: e.Request,
+    res: e.Response,
+    next: e.NextFunction,
+  ) {
+    try {
+      const { token } = req.body;
+
+      const { expires } =
+        await this.authService.send2FALoginOTPToRecoveryEmail(token);
+
+      return res
+        .status(200)
+        .json({ message: 'Recovery OTP sent successfully', expires });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   public async setup2FATOTP(
     req: e.Request,
     res: e.Response,
@@ -535,6 +554,108 @@ export class AuthController {
 
       const { user, accessToken, refreshToken } =
         await this.authService.loginWith2FATOTP({ otp, token }, { deviceInfo });
+
+      // Account Chooser
+      const { [env.auth.accountChooserCookieName]: accountChooserCookie } =
+        req.cookies;
+      const accountChooser =
+        await this.getAccountChooserCookieValue(accountChooserCookie);
+
+      const refreshTokensMapping = await this.getAllRefreshTokensMapping(req);
+
+      const { refreshTokenCookieName, accountChooser: newAccountChooser } =
+        await this.authService.generateAccountChooser(
+          refreshToken,
+          accountChooser,
+          refreshTokensMapping,
+        );
+      const accountChooserCookieValue = await encryptCookieValue(
+        JSON.stringify(newAccountChooser),
+      );
+
+      return res
+        .status(200)
+        .cookie(
+          env.auth.accountChooserCookieName,
+          accountChooserCookieValue,
+          this.generateAccountChooserCookieOptions(),
+        )
+        .cookie(
+          refreshTokenCookieName,
+          refreshToken,
+          this.generateRefreshTokenCookieOptions(),
+        )
+        .json({ user, token: accessToken });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async requestUpdateRecoveryEmail(
+    req: e.Request,
+    res: e.Response,
+    next: e.NextFunction,
+  ) {
+    try {
+      const data = req.body;
+
+      await this.authService.requestUpdateRecoveryEmail(data);
+
+      return res
+        .status(200)
+        .json({ message: 'Recovery email update request sent' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async verifyRecoveryEmail(
+    req: e.Request,
+    res: e.Response,
+    next: e.NextFunction,
+  ) {
+    try {
+      const { token } = req.query;
+
+      await this.authService.verifyAndUpdateRecoveryEmail(token as string);
+
+      return res.status(200).redirect(`${env.client.url}`);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async regenerateRecoveryCodes(
+    req: e.Request,
+    res: e.Response,
+    next: e.NextFunction,
+  ) {
+    try {
+      const user = req.body;
+
+      const { recoveryCodes } =
+        await this.authService.regenerateRecoveryCodes(user);
+
+      return res.status(200).json({ recoveryCodes });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public async loginWithRecoveryCode(
+    req: e.Request,
+    res: e.Response,
+    next: e.NextFunction,
+  ) {
+    try {
+      const { code: recoveryCode, token } = req.body;
+      const { deviceInfo } = req;
+
+      const { user, accessToken, refreshToken } =
+        await this.authService.loginWithRecoveryCode(
+          { code: recoveryCode, token },
+          { deviceInfo },
+        );
 
       // Account Chooser
       const { [env.auth.accountChooserCookieName]: accountChooserCookie } =

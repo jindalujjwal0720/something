@@ -9,6 +9,13 @@ export type ITwoFactorAuth = {
   };
 };
 
+export type IRecoveryDetails = {
+  backupCodes: string[];
+  email?: string;
+  emailVerified?: boolean;
+  backupCodesUsedCount?: number;
+};
+
 export interface IUser {
   _id: string;
   // Base properties, required for creating a new user
@@ -23,6 +30,7 @@ export interface IUser {
   isEmailVerified?: boolean;
   // 2FA
   twoFactorAuth?: ITwoFactorAuth;
+  recoveryDetails?: IRecoveryDetails;
 
   createdAt: Date;
   updatedAt: Date;

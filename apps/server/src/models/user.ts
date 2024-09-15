@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
-import { IUser, IRefreshToken } from '../types/models/user.d';
+import {
+  IUser,
+  IRefreshToken,
+  ITwoFactorAuth,
+  IRecoveryDetails,
+} from '../types/models/user.d';
 
 const refreshTokenSchema = new mongoose.Schema<IRefreshToken>(
   {
@@ -35,7 +40,7 @@ const updatesSchema = new mongoose.Schema<
   { _id: false },
 );
 
-const twoFactorAuthSchema = new mongoose.Schema(
+const twoFactorAuthSchema = new mongoose.Schema<ITwoFactorAuth>(
   {
     enabled: { type: Boolean, default: false },
     otp: {
@@ -45,10 +50,26 @@ const twoFactorAuthSchema = new mongoose.Schema(
     },
     totp: {
       enabled: { type: Boolean, default: false },
-      encryptedSecret: { type: String },
+      secret: { type: String },
     },
   },
   { _id: false },
+);
+
+const recoveryDetailsSchema = new mongoose.Schema<IRecoveryDetails>(
+  {
+    backupCodes: [
+      {
+        code: { type: String, required: true },
+        usedAt: { type: Date },
+      },
+    ],
+    email: { type: String },
+    emailVerified: { type: Boolean },
+  },
+  {
+    _id: false,
+  },
 );
 
 const userSchema = new mongoose.Schema<IUser>(
@@ -103,6 +124,15 @@ const userSchema = new mongoose.Schema<IUser>(
         enabled: false,
         otp: { enabled: true }, // OTP enabled by default
         totp: { enabled: false },
+      },
+      select: false,
+    },
+
+    recoveryDetails: {
+      type: recoveryDetailsSchema,
+      default: {
+        backupCodes: [],
+        emailVerified: false,
       },
       select: false,
     },

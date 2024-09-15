@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import {
   Form,
   FormControl,
@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useGetMeQuery, useUpdateMeMutation } from '@/features/auth/api/auth';
+import { getErrorMessage } from '@/utils/errors';
 
 const accountFormSchema = z.object({
   name: z.string().min(3, {
@@ -25,25 +27,26 @@ const accountFormSchema = z.object({
 type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 const AccountForm = () => {
+  const { data: { user } = {} } = useGetMeQuery();
   const defaultValues: AccountFormValues = {
-    name: 'Ujjwal Jindal',
-    email: 'jindalujjwal0720@gmail.com',
-    imageUrl: 'https://avatars.githubusercontent.com/u/47153486?v=4',
+    name: user?.name || '',
+    email: user?.email || '',
+    imageUrl: user?.imageUrl || '',
   };
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues,
   });
+  const [updateMe, { isLoading }] = useUpdateMeMutation();
 
-  const onSubmit = (data: AccountFormValues) => {
-    toast({
-      title: 'You submitted the following values:',
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+  const onSubmit = async (data: AccountFormValues) => {
+    if (isLoading) return;
+    try {
+      await updateMe({ user: data }).unwrap();
+      toast.success('Account updated successfully');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
   };
 
   return (
@@ -98,7 +101,9 @@ const AccountForm = () => {
             </FormItem>
           )}
         />
-        <Button type="submit">Update account</Button>
+        <Button type="submit" disabled={isLoading}>
+          Update account
+        </Button>
       </form>
     </Form>
   );

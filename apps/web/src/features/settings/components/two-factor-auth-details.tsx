@@ -49,11 +49,10 @@ const TwoFactorAuthenticationDetails = () => {
             </div>
             <Button
               variant="ghost"
-              disabled={
-                !user?.twoFactorAuth?.enabled || user.twoFactorAuth.totp.enabled
-              }
+              disabled={!user?.twoFactorAuth?.enabled}
+              onClick={() => navigate('/settings/security/authenticator')}
             >
-              Set up
+              {user?.twoFactorAuth?.totp?.enabled ? 'Enabled' : 'Setup'}
             </Button>
           </div>
           <div className="flex pt-4 items-center justify-between gap-4">

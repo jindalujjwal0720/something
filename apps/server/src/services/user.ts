@@ -25,13 +25,36 @@ export class UserService {
     if (user.twoFactorAuth?.totp) {
       user.twoFactorAuth.totp.secret = undefined;
     }
+    // Recovery details sensitive fields
+    if (user.recoveryDetails) {
+      user.recoveryDetails.backupCodesUsedCount =
+        user.recoveryDetails.backupCodes.filter((code) => code.usedAt).length;
+      user.recoveryDetails.backupCodes = [];
+    }
     return user;
   }
 
   public async findUserByEmail(email: string): Promise<IUser | null> {
     const user = await this.userModel
       .findOne({ email })
-      .select('+twoFactorAuth');
-    return user ? this.excludeSensitiveFields(user) : null;
+      .select('+twoFactorAuth +recoveryDetails');
+    return user ? this.excludeSensitiveFields(user.toObject()) : null;
+  }
+
+  public async updateUserByEmail(
+    email: string,
+    updates: Partial<IUser>,
+  ): Promise<IUser | null> {
+    // only allow updating non sensitive fields
+    const update = {
+      name: updates.name,
+      imageUrl: updates.imageUrl,
+    };
+    const user = await this.userModel
+      .findOneAndUpdate({ email }, update, {
+        new: true,
+      })
+      .select('+twoFactorAuth +recoveryDetails');
+    return user ? this.excludeSensitiveFields(user.toObject()) : null;
   }
 }

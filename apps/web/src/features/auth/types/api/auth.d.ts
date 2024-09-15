@@ -4,6 +4,14 @@ export interface GetMeResponse {
   user: IUser;
 }
 
+export interface UpdateMeDTO {
+  user: Partial<IUser>;
+}
+
+export type UpdateMeResponse = {
+  user: IUser;
+};
+
 export interface RegisterDTO {
   user: {
     name: string;
@@ -87,7 +95,7 @@ export interface Enable2FADTO {
 }
 
 export type Enable2FAResponse = {
-  message: string;
+  recoveryCodes: string[];
 };
 
 export interface Disable2FADTO {
@@ -155,6 +163,35 @@ export interface Verify2faTotpDTO {
 }
 
 export type Verify2faTotpResponse = {
+  user: IUser;
+  token: string;
+};
+
+export interface RequestRecoveryEmailUpdateDTO {
+  email: string;
+  password: string;
+  newRecoveryEmail: string;
+}
+
+export type RequestRecoveryEmailUpdateResponse = {
+  message: string;
+};
+
+export interface RegenerateRecoveryCodesDTO {
+  email: string;
+  password: string;
+}
+
+export type RegenerateRecoveryCodesResponse = {
+  recoveryCodes: string[];
+};
+
+export interface LoginWithRecoveryCodeDTO {
+  token: string;
+  code: string;
+}
+
+export type LoginWithRecoveryCodeResponse = {
   user: IUser;
   token: string;
 };

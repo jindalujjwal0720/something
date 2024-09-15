@@ -14,5 +14,11 @@ router.get(
   authMiddleware.requireAuthenticated.bind(authMiddleware),
   userController.getMe.bind(userController),
 );
+router.patch(
+  '/me',
+  rateLimiterMiddleware.limiter,
+  authMiddleware.requireAuthenticated.bind(authMiddleware),
+  userController.updateMe.bind(userController),
+);
 
 export default router;

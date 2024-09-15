@@ -19,16 +19,18 @@ import {
 } from '../../api/auth';
 import { getErrorMessage } from '@/utils/errors';
 import { CheckCircledIcon } from '@radix-ui/react-icons';
+import { useState } from 'react';
+import RecoveryCodes from '../recovery-codes';
 
-const enable2faFormSchema = z.object({
+const setup2faFormSchema = z.object({
   password: z.string(),
 });
 
-type Enable2faFormValues = z.infer<typeof enable2faFormSchema>;
+type Setup2faFormValues = z.infer<typeof setup2faFormSchema>;
 
-const EnableTwoFactorAuthenticationForm = () => {
-  const form = useForm<Enable2faFormValues>({
-    resolver: zodResolver(enable2faFormSchema),
+const SetupTwoFactorAuthenticationForm = () => {
+  const form = useForm<Setup2faFormValues>({
+    resolver: zodResolver(setup2faFormSchema),
     defaultValues: {
       password: '',
     },
@@ -36,19 +38,27 @@ const EnableTwoFactorAuthenticationForm = () => {
   const { data: { user } = {} } = useGetMeQuery();
   const [enable2fa] = useEnable2FAMutation();
   const [disable2fa] = useDisable2FAMutation();
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
 
-  const onSubmit = async (data: Enable2faFormValues) => {
+  const onSubmit = async (data: Setup2faFormValues) => {
     try {
-      const payload = user?.twoFactorAuth?.enabled
-        ? await disable2fa({
-            password: data.password,
-            email: user?.email || '',
-          }).unwrap()
-        : await enable2fa({
-            password: data.password,
-            email: user?.email || '',
-          }).unwrap();
-      toast.success(payload.message);
+      if (user?.twoFactorAuth?.enabled) {
+        const payload = await disable2fa({
+          password: data.password,
+          email: user?.email || '',
+        }).unwrap();
+        form.reset();
+        toast.success(payload.message);
+        return;
+      } else {
+        const payload = await enable2fa({
+          password: data.password,
+          email: user?.email || '',
+        }).unwrap();
+        form.reset();
+        setRecoveryCodes(payload.recoveryCodes);
+        toast.success('Two-factor authentication enabled.');
+      }
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -59,8 +69,11 @@ const EnableTwoFactorAuthenticationForm = () => {
       {user?.twoFactorAuth?.enabled && (
         <p className="text-green-600 flex gap-2 text-sm items-center">
           <CheckCircledIcon />
-          <span>Two-factor authentication is already enabled.</span>
+          <span>Two-factor authentication is enabled.</span>
         </p>
+      )}
+      {recoveryCodes && recoveryCodes.length > 0 && (
+        <RecoveryCodes recoveryCodes={recoveryCodes} />
       )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -83,7 +96,7 @@ const EnableTwoFactorAuthenticationForm = () => {
           />
           <Button
             type="submit"
-            variant={user?.twoFactorAuth?.enabled ? 'secondary' : 'default'}
+            variant={user?.twoFactorAuth?.enabled ? 'destructive' : 'default'}
           >
             {user?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'} two-factor
             authentication
@@ -94,4 +107,4 @@ const EnableTwoFactorAuthenticationForm = () => {
   );
 };
 
-export default EnableTwoFactorAuthenticationForm;
+export default SetupTwoFactorAuthenticationForm;

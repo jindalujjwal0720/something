@@ -6,9 +6,9 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import EnableTwoFactorAuthenticationForm from '@/features/auth/components/forms/enable-2fa-form';
+import RegenerateBackupCodesForm from '@/features/auth/components/forms/regenerate-backup-codes-form';
 
-const EnableTwoFactorAuthentication = () => {
+const RegenerateBackupCodes = () => {
   return (
     <div className="space-y-8">
       <Breadcrumb>
@@ -18,21 +18,21 @@ const EnableTwoFactorAuthentication = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Enable 2FA</BreadcrumbPage>
+            <BreadcrumbPage>Backup codes</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
       <div>
-        <h3 className="text-lg font-medium">Two-factor Authentication</h3>
+        <h3 className="text-lg font-medium">Backup codes</h3>
         <p className="text-sm text-muted-foreground">
-          Add an extra layer of security to your account. When enabled, you will
-          need to provide a verification code along with your password when
-          signing in.
+          Generate backup codes to recover your account. Save these backup codes
+          in a safe place. You can use these codes to access your account if you
+          lose access to your two-factor authentication device.
         </p>
       </div>
-      <EnableTwoFactorAuthenticationForm />
+      <RegenerateBackupCodesForm />
     </div>
   );
 };
 
-export default EnableTwoFactorAuthentication;
+export default RegenerateBackupCodes;

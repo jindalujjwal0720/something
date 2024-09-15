@@ -18,48 +18,45 @@ import {
 import {
   InputOTP,
   InputOTPGroup,
+  InputOTPSeparator,
   InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils/errors';
-import { useSend2faOtpMutation, useVerify2faOtpMutation } from '../../api/auth';
 import { toast } from 'sonner';
-import { REGEXP_ONLY_DIGITS } from 'input-otp';
-import { Verify2faOtpResponse } from '../../types/api/auth';
-import useTimer from '../../hooks/useTimer';
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
 import { Link } from 'react-router-dom';
-import { convertDurationToReadable } from '@/utils/time';
+import { useLoginWithRecoveryCodeMutation } from '../../api/auth';
+import { Verify2faTotpResponse } from '../../types/api/auth';
 import useQueryParam from '@/hooks/useQueryParam';
-import { useCallback } from 'react';
 
-const verify2faOtpSchema = z.object({
-  otp: z.string().length(6, {
-    message: 'OTP must be 6 characters',
-  }),
+const verifyRecoveryCodeFormSchema = z.object({
+  code: z.string().length(8, 'Recovery code must be 8 characters'),
 });
 
-type Verify2FAOTPFormValues = z.infer<typeof verify2faOtpSchema>;
+type VerifyRecoveryCodeFormValues = z.infer<
+  typeof verifyRecoveryCodeFormSchema
+>;
 
-interface Verify2FAOTPFormProps {
-  onSuccess?: (data: Verify2faOtpResponse) => void;
+interface VerifyRecoveryCodeFormProps {
+  onSuccess?: (data: Verify2faTotpResponse) => void;
 }
 
-const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
+const VerifyRecoveryCodeForm = ({ onSuccess }: VerifyRecoveryCodeFormProps) => {
   const token = useQueryParam('token');
-  const form = useForm<Verify2FAOTPFormValues>({
-    resolver: zodResolver(verify2faOtpSchema),
+  const form = useForm<VerifyRecoveryCodeFormValues>({
+    resolver: zodResolver(verifyRecoveryCodeFormSchema),
     defaultValues: {
-      otp: '',
+      code: '',
     },
   });
-  const [sendOtp, { isLoading: isSendingOtp }] = useSend2faOtpMutation();
-  const [verifyOTP, { isLoading: isVerifyingOtp }] = useVerify2faOtpMutation();
-  const [timer, setTimer] = useTimer(0);
+  const [verifyRecoveryCode, { isLoading: isVerifyingOtp }] =
+    useLoginWithRecoveryCodeMutation();
 
-  const onSubmit = async (data: Verify2FAOTPFormValues) => {
+  const onSubmit = async (data: VerifyRecoveryCodeFormValues) => {
     try {
-      const payload = await verifyOTP({
-        otp: data.otp,
+      const payload = await verifyRecoveryCode({
+        code: data.code,
         token: token || '',
       }).unwrap();
       if (onSuccess) {
@@ -70,23 +67,12 @@ const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
     }
   };
 
-  const handleSendOtp = useCallback(async () => {
-    try {
-      const payload = await sendOtp({ token: token || '' }).unwrap();
-      const seconds = (new Date(payload.expires).getTime() - Date.now()) / 1000;
-      setTimer(seconds);
-      toast.success(payload.message);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
-  }, [sendOtp, token, setTimer]);
-
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Verify OTP</CardTitle>
+        <CardTitle className="text-2xl">Verify recovery code</CardTitle>
         <CardDescription>
-          Please enter the One-time-password sent to your email address.
+          Enter the recovery code saved during the setup process.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -94,23 +80,28 @@ const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
             <FormField
               control={form.control}
-              name="otp"
+              name="code"
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
                     <div className="flex justify-center">
                       <InputOTP
                         {...field}
-                        maxLength={6}
-                        pattern={REGEXP_ONLY_DIGITS}
+                        maxLength={8}
+                        pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
                       >
                         <InputOTPGroup>
                           <InputOTPSlot index={0} />
                           <InputOTPSlot index={1} />
                           <InputOTPSlot index={2} />
                           <InputOTPSlot index={3} />
+                        </InputOTPGroup>
+                        <InputOTPSeparator />
+                        <InputOTPGroup>
                           <InputOTPSlot index={4} />
                           <InputOTPSlot index={5} />
+                          <InputOTPSlot index={6} />
+                          <InputOTPSlot index={7} />
                         </InputOTPGroup>
                       </InputOTP>
                     </div>
@@ -120,21 +111,10 @@ const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
               )}
             />
             <Button type="submit" className="w-full" disabled={isVerifyingOtp}>
-              {isVerifyingOtp ? 'Verifying...' : 'Verify OTP'}
+              {isVerifyingOtp ? 'Verifying...' : 'Verify recovery code'}
             </Button>
           </form>
         </Form>
-        <div className="mt-4 text-center text-sm">
-          Didn't receive the OTP?{' '}
-          <Button
-            variant="link"
-            onClick={handleSendOtp}
-            disabled={isSendingOtp || timer > 0}
-            className="p-0 h-8 underline"
-          >
-            Resend OTP {timer > 0 && `in ${convertDurationToReadable(timer)}`}
-          </Button>
-        </div>
         <div className="mt-4 text-center text-sm">
           Choose a{' '}
           <Link to={`/auth/2fa?token=${token}`} className="underline">
@@ -150,4 +130,4 @@ const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
   );
 };
 
-export default Verify2FAOTPForm;
+export default VerifyRecoveryCodeForm;

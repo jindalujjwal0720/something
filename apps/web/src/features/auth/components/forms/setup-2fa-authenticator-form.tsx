@@ -14,6 +14,13 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import QRCode from 'react-qr-code';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  useEnable2faTotpMutation,
+  useGetMeQuery,
+  useRegenerate2faTotpMutation,
+} from '../../api/auth';
+import { toast } from 'sonner';
+import { getErrorMessage } from '@/utils/errors';
 
 const setup2faAuthenticatorFormSchema = z.object({
   password: z.string(),
@@ -30,31 +37,59 @@ const Setup2faAuthenticatorForm = () => {
       password: '',
     },
   });
+  const { data: { user } = {} } = useGetMeQuery();
+  const [enableTotp, { isLoading }] = useEnable2faTotpMutation();
+  const [regenerateTotp, { isLoading: isRegeneratingTotp }] =
+    useRegenerate2faTotpMutation();
   const [otpAuthUrl, setOtpAuthUrl] = useState<string | null>(null);
 
-  const onSubmit = (_data: Setup2faAuthenticatorFormValues) => {
-    setOtpAuthUrl((prev) => {
-      return prev ? null : 'otpauth://totp/MyApp:alice?secret=JBS';
-    });
+  const onSubmit = async (_data: Setup2faAuthenticatorFormValues) => {
+    if (isLoading) return;
+    try {
+      const data = form.getValues();
+      if (user?.twoFactorAuth?.totp.enabled) {
+        const response = await regenerateTotp({
+          email: user?.email || '',
+          password: data.password,
+        }).unwrap();
+        setOtpAuthUrl(response.otpAuthUrl);
+      } else {
+        const response = await enableTotp({
+          email: user?.email || '',
+          password: data.password,
+        }).unwrap();
+        setOtpAuthUrl(response.otpAuthUrl);
+      }
+      form.reset();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {otpAuthUrl && (
-          <>
-            <div className="flex gap-6 items-center">
-              <Card className="w-min">
-                <CardContent className="p-4">
-                  <QRCode value={otpAuthUrl} size={200} />
-                </CardContent>
-              </Card>
-              <p className="text-sm text-muted-foreground">
-                Scan the QR code using your authenticator app to set up
-                two-factor authentication.
-              </p>
-            </div>
-          </>
+        {!isLoading ? (
+          otpAuthUrl && (
+            <>
+              <div className="flex gap-6 items-center">
+                <Card className="w-min">
+                  <CardContent className="p-4">
+                    <QRCode value={otpAuthUrl} size={200} />
+                  </CardContent>
+                </Card>
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-semibold">
+                    Important: This won't be shown again.
+                  </span>{' '}
+                  Scan the QR code using your authenticator app to set up
+                  two-factor authentication.
+                </p>
+              </div>
+            </>
+          )
+        ) : (
+          <p className="text-muted-foreground">Generating QR code...</p>
         )}
         <FormField
           control={form.control}
@@ -69,8 +104,10 @@ const Setup2faAuthenticatorForm = () => {
             </FormItem>
           )}
         />
-        <Button type="submit">
-          {otpAuthUrl ? 'Re-generate QR code' : 'Generate QR code'}
+        <Button type="submit" disabled={isLoading || isRegeneratingTotp}>
+          {user?.twoFactorAuth?.totp.enabled
+            ? 'Re-generate QR code'
+            : 'Generate QR code'}
         </Button>
       </form>
     </Form>

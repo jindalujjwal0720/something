@@ -74,3 +74,21 @@ export interface User2faOtpGeneratedEventData {
   };
   otp: string;
 }
+
+export interface User2faRecoveryOtpGeneratedEventData {
+  recoveryEmail: string;
+  user: {
+    name: string;
+    email: string;
+  };
+  otp: string;
+}
+
+export interface UserRecoveryEmailUpdateRequestedEventData {
+  user: {
+    name: string;
+    email: string;
+  };
+  recoveryEmail: string;
+  emailVerificationToken: string;
+}

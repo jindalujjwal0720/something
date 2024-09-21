@@ -1,12 +1,12 @@
 # Something: Starter Template
 
-Welcome to the **Something Starter Template**—your launchpad for building modern web applications that are not just functional, but extraordinary! Whether you're a seasoned developer or just starting your coding journey, this template has everything you need to create stunning, production-ready apps with ease.
+Welcome to the **Something Starter Template**—your launchpad for building modern web applications that are not just functional but extraordinary! Whether you're a seasoned developer or just starting your coding journey, this template has everything you need to create stunning, production-ready apps easily.
 
-![Something Starter Template](https://i.imgur.com/1QgrNNw.png)
+![Something Starter Template](https://github.com/user-attachments/assets/d070c248-ab70-4fb9-a336-abb49773b99f)
 
 ## 🌟 Why Choose Something?
 
-Imagine a world where authentication is seamless, your code is clean, and your applications scale like a dream. With **Something**, that world is your reality! Packed with powerful features, this template transforms your development process into a smooth ride.
+Imagine a world where authentication is seamless, your code is clean, and your applications scale like a dream. With **Something**, that world is your reality! Packed with powerful features, this template makes your development process smooth.
 
 ### 🔑 **Advanced Authentication**
 
@@ -14,7 +14,7 @@ Security shouldn’t be an afterthought—it should be baked in.
 
 - **Multi-Factor Authentication**: Keep your users safe with MFA, including authenticator apps, OTPs, and backup codes.
 - **Password Management**: Password resets and changes made easy and secure.
-- **Anomalous Login Detection**: Automatically spot suspicious activity before it becomes a problem.
+- **Anomalous Login Detection**: Automatically spot suspicious activity before it becomes problematic.
 
 ### **Event-Driven Architecture**
 
@@ -44,7 +44,7 @@ Your data, your way.
 
 Your code deserves the best.
 
-- **Jest Testing Suite**: Write and run tests for both backend and frontend, ensuring your app runs smoothly and as expected.
+- **Jest Testing Suite**: Write and run tests for both the backend and frontend, ensuring your app runs smoothly and as expected.
 
 ### **Role-Based Access Control**
 
@@ -66,7 +66,7 @@ Type safety is your best friend.
 
 ### **Linting & Formatting**
 
-Consistent style for a polished product.
+A consistent style for a polished product.
 
 - **ESLint & Prettier**: Keep your code looking sharp and professional.
 
@@ -82,7 +82,8 @@ Ready to embark on your development journey? Here’s how to get started:
 
 ### Installation Steps
 
-1. **Use the template** by clicking on the Github provided button
+1. **Use the template** by clicking on the Github-provided button
+
 2. **Clone your repository**
 
    ```bash

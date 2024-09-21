@@ -2,7 +2,7 @@
 
 Welcome to the **Something Starter Template**—your launchpad for building modern web applications that are not just functional but extraordinary! Whether you're a seasoned developer or just starting your coding journey, this template has everything you need to create stunning, production-ready apps easily.
 
-![Something Starter Template](https://github.com/user-attachments/assets/d070c248-ab70-4fb9-a336-abb49773b99f)
+![Something Starter Template](https://github.com/user-attachments/assets/6e76e485-aae4-4fde-947d-6757a5d8c9aa)
 
 ## 🌟 Why Choose Something?
 

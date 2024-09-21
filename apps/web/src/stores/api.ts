@@ -23,13 +23,20 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-const baseQueryWithRefresh = async (
+const baseQueryWithRefreshAnd2faRedirect = async (
   args: string | FetchArgs,
   api: BaseQueryApi,
   extraOptions = {},
 ) => {
   let result = await baseQuery(args, api, extraOptions);
   if (result.error?.status === 401) {
+    if ('requires2FA' in (result.error.data as Record<string, unknown>)) {
+      const { token } = result.error.data as { token: string };
+      const redirect_uri = window.location.href;
+      window.location.href = `/auth/2fa?token=${token}&redirect_uri=${redirect_uri}`;
+      return result;
+    }
+
     const refreshResult = await baseQuery(
       '/v1/auth/refresh',
       api,
@@ -52,7 +59,7 @@ const baseQueryWithRefresh = async (
 };
 
 export const api = createApi({
-  baseQuery: baseQueryWithRefresh,
+  baseQuery: baseQueryWithRefreshAnd2faRedirect,
   endpoints: () => ({}),
   tagTypes: [
     'Auth', // This is a tag for the auth related endpoints

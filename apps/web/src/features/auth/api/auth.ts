@@ -92,9 +92,9 @@ const authApi = api.injectEndpoints({
       RequestResetPasswordDTO
     >({
       query: (data) => ({
-        url: '/v1/auth/request-reset-password',
+        url: '/v1/auth/request-password-reset',
         method: 'POST',
-        body: data,
+        body: data.user,
       }),
     }),
     verifyEmail: builder.mutation<VerifyEmailResponse, VerifyEmailDTO>({

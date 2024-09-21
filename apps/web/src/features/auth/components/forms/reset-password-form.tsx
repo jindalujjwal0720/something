@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -20,6 +20,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link, Navigate } from 'react-router-dom';
+import { useResetPasswordMutation } from '../../api/auth';
+import { getErrorMessage } from '@/utils/errors';
 
 const resetPasswordFormSchema = z
   .object({
@@ -55,29 +57,26 @@ const ResetPasswordForm = ({ token, email }: ResetPasswordFormProps) => {
       confirmPassword: '',
     },
   });
+  const [resetPassword] = useResetPasswordMutation();
 
   if (!token || !email) {
     return <Navigate to="/" />;
   }
 
-  const onSubmit = (data: ResetPasswordFormValues) => {
-    toast({
-      title: 'You submitted the following values:',
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">
-            {JSON.stringify(
-              {
-                ...data,
-                token,
-              },
-              null,
-              2,
-            )}
-          </code>
-        </pre>
-      ),
-    });
+  const onSubmit = async (data: ResetPasswordFormValues) => {
+    try {
+      const payload = await resetPassword({
+        user: {
+          email: email || '',
+          currentPasswordOrToken: token,
+          newPassword: data.newPassword,
+          confirmPassword: data.confirmPassword,
+        },
+      }).unwrap();
+      toast.success(payload.message);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
   };
 
   return (

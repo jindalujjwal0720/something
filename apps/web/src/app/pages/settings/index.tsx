@@ -20,7 +20,7 @@ const Settings = () => {
   return (
     <div className="pt-navbar">
       <Navbar variant="fixed" />
-      <div className="space-y-6 p-6 pb-12 md:p-10 md:pb-16 md:block">
+      <div className="space-y-6 pt-5 px-6 pb-12 md:px-10 md:pb-16 md:block">
         <div className="space-y-0.5">
           <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
           <p className="text-muted-foreground">

@@ -35,4 +35,23 @@ export class AuthMiddleware {
       next(err);
     }
   }
+
+  public async requireMFAVerified(
+    req: e.Request,
+    res: e.Response,
+    next: e.NextFunction,
+  ) {
+    const { mfaVerified } = req.user;
+
+    const token = this.authService.generate2FAAccessToken(req.user);
+
+    if (!mfaVerified) {
+      return res.status(CommonErrors.Unauthorized.statusCode).json({
+        requires2FA: true,
+        token,
+      });
+    }
+
+    next();
+  }
 }

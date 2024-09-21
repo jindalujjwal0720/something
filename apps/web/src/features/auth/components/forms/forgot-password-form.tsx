@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -21,6 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import useQueryParam from '@/hooks/useQueryParam';
+import { useRequestResetPasswordMutation } from '../../api/auth';
+import { getErrorMessage } from '@/utils/errors';
 
 const forgotPasswordFormSchema = z.object({
   email: z.string().email(),
@@ -36,16 +38,17 @@ const ForgotPasswordForm = () => {
       email: email || '',
     },
   });
+  const [requestResetPassword] = useRequestResetPasswordMutation();
 
-  const onSubmit = (data: ForgotPasswordFormValues) => {
-    toast({
-      title: 'You submitted the following values:',
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+  const onSubmit = async (data: ForgotPasswordFormValues) => {
+    try {
+      const payload = await requestResetPassword({
+        user: data,
+      }).unwrap();
+      toast.success(payload.message);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    }
   };
 
   return (

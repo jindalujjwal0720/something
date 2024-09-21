@@ -153,7 +153,9 @@ export class AuthController {
 
       if ('requires2FA' in response) {
         const { requires2FA, token } = response;
-        return res.status(200).json({ requires2FA, token });
+        return res
+          .status(CommonErrors.Unauthorized.statusCode)
+          .json({ requires2FA, token });
       }
 
       const { user, accessToken, refreshToken } = response;

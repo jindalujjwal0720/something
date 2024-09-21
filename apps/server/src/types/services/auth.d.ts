@@ -38,6 +38,7 @@ export interface TokenPayload {
   name: string;
   imageUrl?: string;
   roles: string[];
+  mfaVerified: boolean; // true is current session has 2FA verified
 }
 
 export interface UserRefreshTokensConfig {

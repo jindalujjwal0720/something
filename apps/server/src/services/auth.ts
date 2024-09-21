@@ -50,12 +50,16 @@ export class AuthService {
     return bcrypt.compare(password, hashedPassword);
   }
 
-  private async generatePayload(user: IUser): Promise<TokenPayload> {
+  private async generatePayload(
+    user: IUser,
+    mfaVerified = false,
+  ): Promise<TokenPayload> {
     return {
       email: user.email,
       name: user.name,
       imageUrl: user.imageUrl,
       roles: user.roles,
+      mfaVerified: mfaVerified,
     };
   }
 
@@ -169,12 +173,6 @@ export class AuthService {
       .createHash('sha256')
       .update(uniquePayloadString)
       .digest('hex');
-  }
-
-  private async generate2FAAccessToken(payload: TokenPayload): Promise<string> {
-    return jwt.sign(payload, env.twoFactorAuth.tokenSecret, {
-      expiresIn: env.twoFactorAuth.tokenExpiresInSeconds,
-    });
   }
 
   private async verify2FAToken(token: string): Promise<TokenPayload> {
@@ -303,6 +301,12 @@ export class AuthService {
       codes.push(encryptedCode);
     }
     return codes;
+  }
+
+  public async generate2FAAccessToken(payload: TokenPayload): Promise<string> {
+    return jwt.sign(payload, env.twoFactorAuth.tokenSecret, {
+      expiresIn: env.twoFactorAuth.tokenExpiresInSeconds,
+    });
   }
 
   public async register(userDTO: UserRegisterDTO): Promise<{ user: IUser }> {
@@ -1025,7 +1029,7 @@ export class AuthService {
       this.checkSameDevice(config.deviceInfo, rt),
     );
     if (existingRefreshToken) {
-      const payload = await this.generatePayload(existingUser);
+      const payload = await this.generatePayload(existingUser, true);
       const accessToken = await this.generateAccessToken(payload);
       const encodedRefreshToken =
         await this.encodeRefreshToken(existingRefreshToken);
@@ -1038,7 +1042,7 @@ export class AuthService {
       };
     }
 
-    const payload = await this.generatePayload(existingUser);
+    const payload = await this.generatePayload(existingUser, true);
     const accessToken = await this.generateAccessToken(payload);
     const refreshToken = await this.generateRefreshToken(
       payload,
@@ -1414,7 +1418,7 @@ export class AuthService {
       this.checkSameDevice(config.deviceInfo, rt),
     );
     if (existingRefreshToken) {
-      const payload = await this.generatePayload(existingUser);
+      const payload = await this.generatePayload(existingUser, true);
       const accessToken = await this.generateAccessToken(payload);
       const encodedRefreshToken =
         await this.encodeRefreshToken(existingRefreshToken);
@@ -1427,7 +1431,7 @@ export class AuthService {
       };
     }
 
-    const payload = await this.generatePayload(existingUser);
+    const payload = await this.generatePayload(existingUser, true);
     const accessToken = await this.generateAccessToken(payload);
     const refreshToken = await this.generateRefreshToken(
       payload,
@@ -1626,7 +1630,7 @@ export class AuthService {
       this.checkSameDevice(config.deviceInfo, rt),
     );
     if (existingRefreshToken) {
-      const payload = await this.generatePayload(existingUser);
+      const payload = await this.generatePayload(existingUser, true);
       const accessToken = await this.generateAccessToken(payload);
       const encodedRefreshToken =
         await this.encodeRefreshToken(existingRefreshToken);

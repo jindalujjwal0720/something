@@ -1,3 +1,5 @@
+## :construction: Under construction - features may change at fast pace
+
 # Something: Starter Template
 
 Welcome to the **Something Starter Template**—your launchpad for building modern web applications that are not just functional but extraordinary! Whether you're a seasoned developer or just starting your coding journey, this template has everything you need to create stunning, production-ready apps easily.

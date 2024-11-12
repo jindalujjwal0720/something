@@ -21,7 +21,7 @@ type ExtendedOptions = Options & {
 };
 
 export class MailerService {
-  private transporter: nodemailer.Transporter;
+  private readonly transporter: nodemailer.Transporter;
 
   constructor() {
     this.transporter = nodemailer.createTransport({

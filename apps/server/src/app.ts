@@ -20,7 +20,7 @@ process.on('unhandledRejection', (reason, _promise) => {
   throw reason;
 });
 
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', async (err) => {
   handler.handleError(err, null);
   if (!handler.isTrustedError(err)) {
     // Close the server and exit the process

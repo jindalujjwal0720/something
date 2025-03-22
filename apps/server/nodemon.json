@@ -1,0 +1,11 @@
+{
+  "watch": [
+    "src",
+    "../web/public",
+    "../web/index.html",
+    "../web/ssr-module.ts"
+  ],
+  "ext": "ts",
+  "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts"],
+  "exec": "tsc --noEmit && tsx src/app.ts"
+}

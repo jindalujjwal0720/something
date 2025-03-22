@@ -91,7 +91,7 @@ export class AuthController {
 
       const { user: registeredUser } = await this.authService.register(user);
 
-      return res.status(201).json({ user: registeredUser });
+      res.status(201).json({ user: registeredUser });
     } catch (err) {
       next(err);
     }
@@ -123,7 +123,7 @@ export class AuthController {
 
       await this.authService.resendEmailVerification(user.email);
 
-      return res
+      res
         .status(200)
         .json({ message: 'Email verification link sent successfully' });
     } catch (err) {
@@ -138,7 +138,7 @@ export class AuthController {
   ) {
     try {
       const { user: userData } = req.body;
-      const { useragent } = req;
+      const { useragent } = res.locals;
       const deviceInfo: IDeviceInfo = {
         browser: useragent?.browser || 'unknown',
         os: useragent?.os || 'unknown',
@@ -153,9 +153,10 @@ export class AuthController {
 
       if ('requires2FA' in response) {
         const { requires2FA, token } = response;
-        return res
+        res
           .status(CommonErrors.Unauthorized.statusCode)
           .json({ requires2FA, token });
+        return;
       }
 
       const { user, accessToken, refreshToken } = response;
@@ -178,7 +179,7 @@ export class AuthController {
         JSON.stringify(accountChooser),
       );
 
-      return res
+      res
         .status(200)
         .cookie(
           env.auth.accountChooserCookieName,
@@ -227,7 +228,7 @@ export class AuthController {
         JSON.stringify(accountChooser),
       );
 
-      return res
+      res
         .status(200)
         .cookie(
           env.auth.accountChooserCookieName,
@@ -264,7 +265,7 @@ export class AuthController {
           'Refresh token is missing',
         );
       }
-      const { deviceInfo, ipInfo } = req;
+      const { deviceInfo, ipInfo } = res.locals;
       const {
         user,
         accessToken,
@@ -274,7 +275,7 @@ export class AuthController {
         ipInfo,
       });
 
-      return res
+      res
         .status(200)
         .cookie(
           refreshTokenCookieName,
@@ -300,7 +301,7 @@ export class AuthController {
         logoutAllDevices,
       });
 
-      return res.status(200).json({ message: 'Password reset request sent' });
+      res.status(200).json({ message: 'Password reset request sent' });
     } catch (err) {
       next(err);
     }
@@ -313,7 +314,7 @@ export class AuthController {
   ) {
     try {
       const { user, logoutAllDevices } = req.body;
-      const { deviceInfo, ipInfo } = req;
+      const { deviceInfo, ipInfo } = res.locals;
       const defaultIpInfo = {
         ip: 'unknown',
         location: {
@@ -336,7 +337,7 @@ export class AuthController {
         },
       );
 
-      return res.status(200).json({ message: 'Password reset successfully' });
+      res.status(200).json({ message: 'Password reset successfully' });
     } catch (err) {
       next(err);
     }
@@ -349,14 +350,14 @@ export class AuthController {
   ) {
     try {
       const data = req.body;
-      const { deviceInfo, ipInfo } = req;
+      const { deviceInfo, ipInfo } = res.locals;
 
       const { recoveryCodes } = await this.authService.enable2FA(data, {
         deviceInfo,
         ipInfo,
       });
 
-      return res.status(200).json({ recoveryCodes });
+      res.status(200).json({ recoveryCodes });
     } catch (err) {
       next(err);
     }
@@ -369,14 +370,14 @@ export class AuthController {
   ) {
     try {
       const data = req.body;
-      const { deviceInfo, ipInfo } = req;
+      const { deviceInfo, ipInfo } = res.locals;
 
       await this.authService.disable2FA(data, {
         deviceInfo,
         ipInfo,
       });
 
-      return res.status(200).json({ message: '2FA disabled successfully' });
+      res.status(200).json({ message: '2FA disabled successfully' });
     } catch (err) {
       next(err);
     }
@@ -394,7 +395,7 @@ export class AuthController {
         (token || '') as string,
       );
 
-      return res.status(200).json({ methods: loginMethods });
+      res.status(200).json({ methods: loginMethods });
     } catch (err) {
       next(err);
     }
@@ -407,7 +408,7 @@ export class AuthController {
   ) {
     try {
       const { otp, token } = req.body;
-      const { useragent } = req;
+      const { useragent } = res.locals;
       const deviceInfo: IDeviceInfo = {
         browser: useragent?.browser || 'unknown',
         os: useragent?.os || 'unknown',
@@ -436,7 +437,7 @@ export class AuthController {
         JSON.stringify(newAccountChooser),
       );
 
-      return res
+      res
         .status(200)
         .cookie(
           env.auth.accountChooserCookieName,
@@ -464,9 +465,7 @@ export class AuthController {
 
       const { expires } = await this.authService.send2FALoginOTP(token);
 
-      return res
-        .status(200)
-        .json({ message: 'OTP sent successfully', expires });
+      res.status(200).json({ message: 'OTP sent successfully', expires });
     } catch (err) {
       next(err);
     }
@@ -483,7 +482,7 @@ export class AuthController {
       const { expires } =
         await this.authService.send2FALoginOTPToRecoveryEmail(token);
 
-      return res
+      res
         .status(200)
         .json({ message: 'Recovery OTP sent successfully', expires });
     } catch (err) {
@@ -501,7 +500,7 @@ export class AuthController {
 
       const { otpAuthUrl } = await this.authService.setup2FATOTP(user);
 
-      return res.status(200).json({ otpAuthUrl });
+      res.status(200).json({ otpAuthUrl });
     } catch (err) {
       next(err);
     }
@@ -517,7 +516,7 @@ export class AuthController {
 
       const { otpAuthUrl } = await this.authService.regenerate2FATOTP(user);
 
-      return res.status(200).json({ otpAuthUrl });
+      res.status(200).json({ otpAuthUrl });
     } catch (err) {
       next(err);
     }
@@ -530,14 +529,14 @@ export class AuthController {
   ) {
     try {
       const user = req.body;
-      const { deviceInfo, ipInfo } = req;
+      const { deviceInfo, ipInfo } = res.locals;
 
       await this.authService.disable2FATOTP(user, {
         deviceInfo,
         ipInfo,
       });
 
-      return res
+      res
         .status(200)
         .json({ message: '2FA Authenticator disabled successfully' });
     } catch (err) {
@@ -552,7 +551,7 @@ export class AuthController {
   ) {
     try {
       const { otp, token } = req.body;
-      const { deviceInfo } = req;
+      const { deviceInfo } = res.locals;
 
       const { user, accessToken, refreshToken } =
         await this.authService.loginWith2FATOTP({ otp, token }, { deviceInfo });
@@ -575,7 +574,7 @@ export class AuthController {
         JSON.stringify(newAccountChooser),
       );
 
-      return res
+      res
         .status(200)
         .cookie(
           env.auth.accountChooserCookieName,
@@ -603,9 +602,7 @@ export class AuthController {
 
       await this.authService.requestUpdateRecoveryEmail(data);
 
-      return res
-        .status(200)
-        .json({ message: 'Recovery email update request sent' });
+      res.status(200).json({ message: 'Recovery email update request sent' });
     } catch (err) {
       next(err);
     }
@@ -621,7 +618,7 @@ export class AuthController {
 
       await this.authService.verifyAndUpdateRecoveryEmail(token as string);
 
-      return res.status(200).redirect(`${env.client.url}`);
+      res.status(200).redirect(`${env.client.url}`);
     } catch (err) {
       next(err);
     }
@@ -638,7 +635,7 @@ export class AuthController {
       const { recoveryCodes } =
         await this.authService.regenerateRecoveryCodes(user);
 
-      return res.status(200).json({ recoveryCodes });
+      res.status(200).json({ recoveryCodes });
     } catch (err) {
       next(err);
     }
@@ -651,7 +648,7 @@ export class AuthController {
   ) {
     try {
       const { code: recoveryCode, token } = req.body;
-      const { deviceInfo } = req;
+      const { deviceInfo } = res.locals;
 
       const { user, accessToken, refreshToken } =
         await this.authService.loginWithRecoveryCode(
@@ -677,7 +674,7 @@ export class AuthController {
         JSON.stringify(newAccountChooser),
       );
 
-      return res
+      res
         .status(200)
         .cookie(
           env.auth.accountChooserCookieName,

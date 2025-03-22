@@ -47,10 +47,10 @@ export class MailerService {
     const handlebarOptions = {
       viewEngine: {
         extName: '.hbs',
-        partialsDir: path.resolve(__dirname, '../views/emails/partials'),
+        partialsDir: path.resolve('../views/emails/partials'),
         defaultLayout: '',
       },
-      viewPath: path.resolve(__dirname, '../views/emails'),
+      viewPath: path.resolve('../views/emails'),
       extName: '.hbs',
     };
 

@@ -3,7 +3,7 @@ import { Provider as ReduxProvider } from 'react-redux';
 import { Toaster as ShadCNToaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/components/ui/theme-provider';
-import AuthProvider from '@/features/auth/components/auth-provider';
+import { AuthProvider } from '@/features/auth/components/auth-provider';
 
 export interface ProviderProps {
   children: React.ReactNode;

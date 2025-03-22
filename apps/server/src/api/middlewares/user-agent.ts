@@ -18,7 +18,7 @@ export class UserAgentMiddleware {
         source: req.useragent?.source || 'unknown',
       };
 
-      req.deviceInfo = deviceInfo;
+      res.locals.deviceInfo = deviceInfo;
       next();
     } catch (err) {
       next(err);
@@ -32,7 +32,7 @@ export class UserAgentMiddleware {
   ) {
     try {
       const ipInfo = await fetchIPaddressInfo(req.ip || 'unknown');
-      req.ipInfo = ipInfo;
+      res.locals.ipInfo = ipInfo;
       next();
     } catch (_err) {
       errorLogger.error('IP fetch error');

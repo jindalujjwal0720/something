@@ -1,6 +1,9 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { createContext, useContext, useEffect } from 'react';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const supportedFonts = ['inter', 'serif', 'mono'] as const;
+// eslint-disable-next-line react-refresh/only-export-components
 export const supportedThemes = ['light', 'dark', 'system'] as const;
 
 export type Preferences = {
@@ -33,9 +36,9 @@ export function ThemeProvider({
   storageKey = 'something-ui-theme',
   ...props
 }: PreferencesProviderProps) {
-  const [preferences, setPreferences] = useState<Preferences>(
-    () =>
-      JSON.parse(localStorage.getItem(storageKey) || 'null') || defaultTheme,
+  const [preferences, setPreferences] = useLocalStorage<Preferences>(
+    storageKey,
+    defaultTheme,
   );
 
   useEffect(() => {
@@ -59,10 +62,7 @@ export function ThemeProvider({
 
   const value = {
     preferences,
-    setPreferences: (preferences: Preferences) => {
-      localStorage.setItem(storageKey, JSON.stringify(preferences));
-      setPreferences(preferences);
-    },
+    setPreferences,
   };
 
   return (
@@ -72,6 +72,7 @@ export function ThemeProvider({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const usePreferences = () => {
   const context = useContext(PreferencesProviderContext);
 

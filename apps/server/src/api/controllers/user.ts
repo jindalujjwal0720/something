@@ -11,7 +11,7 @@ export class UserController {
 
   public async getMe(req: e.Request, res: e.Response, next: e.NextFunction) {
     try {
-      const { email } = req.user;
+      const { email } = res.locals.user;
 
       const user = await this.userService.findUserByEmail(email);
 
@@ -23,7 +23,7 @@ export class UserController {
 
   public async updateMe(req: e.Request, res: e.Response, next: e.NextFunction) {
     try {
-      const { email } = req.user;
+      const { email } = res.locals.user;
       const updates = req.body || {};
 
       const user = await this.userService.updateUserByEmail(email, updates);

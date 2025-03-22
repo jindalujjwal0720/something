@@ -8,8 +8,9 @@ import { fixupPluginRules } from '@eslint/compat';
 import checkfilePlugin from 'eslint-plugin-check-file';
 
 const config = [
+  { ignores: ['dist', 'node_modules', 'coverage', 'build', 'public'] },
   {
-    files: ['**/*.{js,mjs,cjs,ts}'],
+    files: ['src/**/*.{js,mjs,cjs,ts}'],
     languageOptions: {
       globals: {
         ...globals.browser,

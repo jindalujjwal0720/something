@@ -28,7 +28,7 @@ export class AuthMiddleware {
       }
 
       const payload = await this.authService.verifyAccessToken(token);
-      req.user = payload;
+      res.locals.user = payload;
 
       next();
     } catch (err) {
@@ -41,9 +41,9 @@ export class AuthMiddleware {
     res: e.Response,
     next: e.NextFunction,
   ) {
-    const { mfaVerified } = req.user;
+    const { mfaVerified } = res.locals.user;
 
-    const token = this.authService.generate2FAAccessToken(req.user);
+    const token = this.authService.generate2FAAccessToken(res.locals.user);
 
     if (!mfaVerified) {
       return res.status(CommonErrors.Unauthorized.statusCode).json({

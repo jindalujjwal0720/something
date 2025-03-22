@@ -1,0 +1,28 @@
+{
+  "name": "root",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "install": "npm install --workspaces",
+    "build": "npm run build:web && npm run build:server && npx copyfiles apps/web/dist/**/* apps/server/dist/web -u 2",
+    "dev": "npm run dev:server",
+    "start": "npm run start:server",
+    "dev:web": "cd apps/web && npm run dev",
+    "build:web": "cd apps/web && npm run build",
+    "lint:web": "cd apps/web && npm run lint",
+    "format:web": "cd apps/web && npm run format",
+    "storybook": "cd apps/web && npm run storybook",
+    "dev:server": "cd apps/server && npm run dev",
+    "build:server": "cd apps/server && npm run build",
+    "start:server": "cd apps/server && npm run start",
+    "lint:server": "cd apps/server && npm run lint",
+    "format:server": "cd apps/server && npm run format",
+    "test:server": "cd apps/server && npm run test"
+  },
+  "dependencies": {
+    "copyfiles": "^2.4.1"
+  }
+}

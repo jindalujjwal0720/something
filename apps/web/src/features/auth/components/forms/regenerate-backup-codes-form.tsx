@@ -12,14 +12,12 @@ import {
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  useGetMeQuery,
-  useRegenerateRecoveryCodesMutation,
-} from '../../api/auth';
+import { useRegenerateRecoveryCodesMutation } from '../../api/auth';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/utils/errors';
 import { useState } from 'react';
 import RecoveryCodes from '../recovery-codes';
+import { useAuth } from '../auth-provider';
 
 const regenerateBackupCodesFormSchema = z.object({
   password: z.string().min(1, "Password can't be empty"),
@@ -37,7 +35,7 @@ const RegenerateBackupCodesForm = () => {
     },
   });
   const [regenerateBackupCodes] = useRegenerateRecoveryCodesMutation();
-  const { data: { user } = {} } = useGetMeQuery();
+  const { user } = useAuth();
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
 
   const onSubmit = async (data: RegenerateBackupCodesFormValues) => {

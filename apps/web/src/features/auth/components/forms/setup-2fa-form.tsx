@@ -12,15 +12,12 @@ import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import {
-  useDisable2FAMutation,
-  useEnable2FAMutation,
-  useGetMeQuery,
-} from '../../api/auth';
+import { useDisable2FAMutation, useEnable2FAMutation } from '../../api/auth';
 import { getErrorMessage } from '@/utils/errors';
 import { CheckCircledIcon } from '@radix-ui/react-icons';
 import { useState } from 'react';
 import RecoveryCodes from '../recovery-codes';
+import { useAuth } from '../auth-provider';
 
 const setup2faFormSchema = z.object({
   password: z.string(),
@@ -35,7 +32,7 @@ const SetupTwoFactorAuthenticationForm = () => {
       password: '',
     },
   });
-  const { data: { user } = {} } = useGetMeQuery();
+  const { user } = useAuth();
   const [enable2fa] = useEnable2FAMutation();
   const [disable2fa] = useDisable2FAMutation();
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);

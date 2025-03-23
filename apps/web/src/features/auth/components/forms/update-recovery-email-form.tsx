@@ -1,10 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import {
-  useGetMeQuery,
-  useRequestUpdateRecoveryEmailMutation,
-} from '../../api/auth';
+import { useRequestUpdateRecoveryEmailMutation } from '../../api/auth';
 import {
   Form,
   FormControl,
@@ -18,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { getErrorMessage } from '@/utils/errors';
 import { toast } from 'sonner';
 import { CheckCircledIcon } from '@radix-ui/react-icons';
+import { useAuth } from '../auth-provider';
 
 const updateRecoveryEmailFormSchema = z.object({
   recoveryEmail: z.string().email(),
@@ -29,7 +27,7 @@ type UpdateRecoveryEmailFormValues = z.infer<
 >;
 
 const UpdateRecoveryEmailForm = () => {
-  const { data: { user } = {} } = useGetMeQuery();
+  const { user } = useAuth();
   const form = useForm<UpdateRecoveryEmailFormValues>({
     resolver: zodResolver(updateRecoveryEmailFormSchema),
     defaultValues: {

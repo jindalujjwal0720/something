@@ -19,9 +19,10 @@ import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useForm } from 'react-hook-form';
-import { useGetMeQuery, useResetPasswordMutation } from '../../api/auth';
+import { useResetPasswordMutation } from '../../api/auth';
 import { getErrorMessage } from '@/utils/errors';
 import { ResetPasswordResponse } from '../../types/api/auth';
+import { useAuth } from '../auth-provider';
 
 const changePasswordSchema = z
   .object({
@@ -58,7 +59,7 @@ const ChangePasswordForm = ({ onSuccess }: ChangePasswordFormProps) => {
       confirmPassword: '',
     },
   });
-  const { data: { user } = {} } = useGetMeQuery();
+  const { user } = useAuth();
   const [resetPassword] = useResetPasswordMutation();
 
   const onSubmit = async (data: ChangePasswordFormValues) => {

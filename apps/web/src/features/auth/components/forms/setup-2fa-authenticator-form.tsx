@@ -16,11 +16,11 @@ import QRCode from 'react-qr-code';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   useEnable2faTotpMutation,
-  useGetMeQuery,
   useRegenerate2faTotpMutation,
 } from '../../api/auth';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/utils/errors';
+import { useAuth } from '../auth-provider';
 
 const setup2faAuthenticatorFormSchema = z.object({
   password: z.string(),
@@ -37,7 +37,7 @@ const Setup2faAuthenticatorForm = () => {
       password: '',
     },
   });
-  const { data: { user } = {} } = useGetMeQuery();
+  const { user } = useAuth();
   const [enableTotp, { isLoading }] = useEnable2faTotpMutation();
   const [regenerateTotp, { isLoading: isRegeneratingTotp }] =
     useRegenerate2faTotpMutation();

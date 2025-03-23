@@ -2,8 +2,6 @@ import { cn } from '@/utils/tw';
 import { Link } from 'react-router-dom';
 import Profile from './profile';
 import { buttonVariants } from '@/components/ui/button';
-import { useSelector } from 'react-redux';
-import { selectIsAuthenticated } from '@/features/auth/stores/auth';
 import Logo from '@/components/logo';
 import { GitHubLogoIcon } from '@radix-ui/react-icons';
 
@@ -12,8 +10,6 @@ interface NavbarProps {
 }
 
 const Navbar = ({ variant }: NavbarProps) => {
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-
   return (
     <nav
       className={cn(
@@ -36,14 +32,6 @@ const Navbar = ({ variant }: NavbarProps) => {
             <GitHubLogoIcon className="mr-2 h-4 w-4" />
             GitHub
           </Link>
-          {!isAuthenticated && (
-            <Link
-              to="/auth/login"
-              className={buttonVariants({ variant: 'default' })}
-            >
-              Login
-            </Link>
-          )}
           <Profile />
         </div>
       </div>

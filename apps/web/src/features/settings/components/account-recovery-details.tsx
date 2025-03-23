@@ -6,12 +6,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useGetMeQuery } from '@/features/auth/api/auth';
+import { useAuth } from '@/features/auth/components/auth-provider';
 import { CheckCircledIcon } from '@radix-ui/react-icons';
 import { useNavigate } from 'react-router-dom';
 
 const AccountRecoveryDetails = () => {
-  const { data: { user } = {} } = useGetMeQuery();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   return (

@@ -13,8 +13,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useGetMeQuery, useUpdateMeMutation } from '@/features/auth/api/auth';
+import { useUpdateMeMutation } from '@/features/auth/api/auth';
 import { getErrorMessage } from '@/utils/errors';
+import { useAuth } from '@/features/auth/components/auth-provider';
 
 const accountFormSchema = z.object({
   name: z.string().min(3, {
@@ -27,7 +28,7 @@ const accountFormSchema = z.object({
 type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 const AccountForm = () => {
-  const { data: { user } = {} } = useGetMeQuery();
+  const { user } = useAuth();
   const defaultValues: AccountFormValues = {
     name: user?.name || '',
     email: user?.email || '',

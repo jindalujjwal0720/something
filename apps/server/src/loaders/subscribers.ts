@@ -1,10 +1,5 @@
-import { emitter } from '../events';
-import { AuthSubscriber } from '../subscribers/auth';
-import { logger } from '../utils/logger';
+import '../events';
 
-const subscribersLoader = async () => {
-  new AuthSubscriber(emitter);
-  logger.info('Auth event subscribers loaded');
-};
+const subscribersLoader = async () => {};
 
 export default subscribersLoader;

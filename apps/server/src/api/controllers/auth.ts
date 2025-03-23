@@ -2,7 +2,6 @@ import * as e from 'express';
 import User from '../../models/user';
 import { IDeviceInfo } from '../../types/middlewares/user-agent';
 import { AuthService } from '../../services/auth';
-import { publisher } from '../../events';
 import { env } from '../../config';
 import { AppError, CommonErrors } from '../../utils/errors';
 import { decryptCookieValue, encryptCookieValue } from '../../utils/cookie';
@@ -12,7 +11,7 @@ export class AuthController {
   private authService: AuthService;
 
   constructor() {
-    this.authService = new AuthService(User, publisher);
+    this.authService = new AuthService(User);
   }
 
   private generateRefreshTokenCookieOptions(): e.CookieOptions {

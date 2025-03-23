@@ -2,13 +2,12 @@ import * as e from 'express';
 import { AppError, CommonErrors } from '../../utils/errors';
 import { AuthService } from '../../services/auth';
 import User from '../../models/user';
-import { publisher } from '../../events';
 
 export class AuthMiddleware {
   private authService: AuthService;
 
   constructor() {
-    this.authService = new AuthService(User, publisher);
+    this.authService = new AuthService(User);
   }
 
   public async requireAuthenticated(

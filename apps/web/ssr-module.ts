@@ -15,7 +15,6 @@ interface SSRModule {
 
 // Constants
 const isProduction = process.env.NODE_ENV === 'production';
-const base = process.env.BASE || '/';
 
 const actualPath = (value: string) => {
   return path.join('../web', value);
@@ -48,7 +47,7 @@ export async function initializeSSR() {
     vite = await createServer({
       server: { middlewareMode: true },
       appType: 'custom',
-      base,
+      base: '/',
       root: '../web',
     });
   }
@@ -81,7 +80,8 @@ export async function getViteMiddleware() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function ssrHandler(req: any, res: any, next: any) {
   try {
-    const url = req.originalUrl.replace(base, '');
+    // remove query params for page URL
+    const url = req.originalUrl.replace('/', '').split('?')[0];
     const nonce = res.locals.cspNonce;
 
     let template: string;
@@ -120,7 +120,6 @@ export async function ssrHandler(req: any, res: any, next: any) {
     res.status(200).set({ 'Content-Type': 'text/html' }).send(html);
   } catch (e: unknown) {
     vite?.ssrFixStacktrace(e as Error);
-    console.log((e as Error).stack);
     next(e);
   }
 }

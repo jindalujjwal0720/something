@@ -6,7 +6,7 @@ import { AppError, CommonErrors } from '../utils/errors';
 import jwt from 'jsonwebtoken';
 import { env, meta } from '../config';
 import crypto from 'crypto';
-import { EventsPublisher } from '../events';
+import { EventBus } from '../events/bus';
 import {
   AccountChooser,
   Disable2FAConfig,
@@ -29,14 +29,13 @@ import {
   UserRegisterDTO,
 } from '../types/services/auth.d';
 import { authenticator } from 'otplib';
+import { AuthenticationEvent } from '../events/auth/events';
 
 export class AuthService {
   private userModel: Model<IUser>;
-  private publisher: EventsPublisher;
 
-  constructor(userModel: Model<IUser>, publisher: EventsPublisher) {
+  constructor(userModel: Model<IUser>) {
     this.userModel = userModel;
-    this.publisher = publisher;
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -190,7 +189,6 @@ export class AuthService {
 
   private async encrypt2FATOTPSecret(secret: string): Promise<string> {
     const key = env.twoFactorAuth.totp.encryptionSecret;
-    console.log(secret);
     if (!key) {
       throw new AppError(
         CommonErrors.InternalServerError.name,
@@ -224,7 +222,6 @@ export class AuthService {
     const decipher = crypto.createDecipheriv('aes-256-cbc', derivedKey, iv);
     let decrypted = decipher.update(encrypted, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
-    console.log(decrypted);
     return decrypted;
   }
 
@@ -340,11 +337,12 @@ export class AuthService {
     const user = this.excludeSensitiveFields(createdUser.toObject());
 
     // Publish events
-    this.publisher.auth.publishUserEmailVerificationRequestedEvent({
+    EventBus.auth.emit(AuthenticationEvent.EMAIL_VERIFICATION_REQUESTED, {
       user,
       emailVerificationToken: createdUser.emailVerificationToken,
+      tokenExpiresInSeconds: env.auth.emailVerificationTokenExpiresInSeconds,
     });
-    this.publisher.auth.publishUserRegisteredEvent({ user });
+    EventBus.auth.emit(AuthenticationEvent.REGISTERED, { user });
 
     return { user };
   }
@@ -423,9 +421,10 @@ export class AuthService {
     const user = this.excludeSensitiveFields(existingUser.toObject());
 
     // Publish events
-    this.publisher.auth.publishUserEmailVerificationRequestedEvent({
+    EventBus.auth.emit(AuthenticationEvent.EMAIL_VERIFICATION_REQUESTED, {
       user,
       emailVerificationToken: existingUser.emailVerificationToken,
+      tokenExpiresInSeconds: env.auth.emailVerificationTokenExpiresInSeconds,
     });
 
     return;
@@ -509,7 +508,7 @@ export class AuthService {
     const userObject = this.excludeSensitiveFields(existingUser.toObject());
 
     // Publish events
-    this.publisher.auth.publishUserLoggedInEvent({
+    EventBus.auth.emit(AuthenticationEvent.LOGGED_IN, {
       user: { name: userObject.name, email: userObject.email },
       deviceInfo: config.deviceInfo,
     });
@@ -604,7 +603,7 @@ export class AuthService {
       await existingUser.save();
 
       // Publish events for force logout
-      this.publisher.auth.publishUserForceLoggedOutEvent({
+      EventBus.auth.emit(AuthenticationEvent.FORCE_LOGGED_OUT, {
         user: { name: existingUser.name, email: existingUser.email },
         deviceInfo,
         ipInfo,
@@ -660,9 +659,10 @@ export class AuthService {
     await existingUser.save();
 
     // Publish events
-    this.publisher.auth.publishUserPasswordChangeRequestedEvent({
+    EventBus.auth.emit(AuthenticationEvent.PASSWORD_CHANGE_REQUESTED, {
       user: { name: existingUser.name, email: existingUser.email },
       resetPasswordToken,
+      tokenExpiresInSeconds: env.auth.resetPasswordTokenExpiresInSeconds,
     });
   }
 
@@ -726,7 +726,7 @@ export class AuthService {
     await existingUser.save();
 
     // Publish events
-    this.publisher.auth.publishUserPasswordChangedEvent({
+    EventBus.auth.emit(AuthenticationEvent.PASSWORD_CHANGED, {
       user: { name: existingUser.name, email: existingUser.email },
       deviceInfo: config.deviceInfo,
       ipInfo: config.ipInfo,
@@ -847,7 +847,7 @@ export class AuthService {
     await existingUser.save();
 
     // Publish events
-    this.publisher.auth.publishUser2FAEnabledEvent({
+    EventBus.auth.emit(AuthenticationEvent.TWO_FACTOR_AUTH_ENABLED, {
       user: { name: existingUser.name, email: existingUser.email },
       deviceInfo: config.deviceInfo,
       ipInfo: config.ipInfo,
@@ -908,7 +908,7 @@ export class AuthService {
     };
     await existingUser.save();
     // Publish events
-    this.publisher.auth.publishUser2FADisabledEvent({
+    EventBus.auth.emit(AuthenticationEvent.TWO_FACTOR_AUTH_DISABLED, {
       user: { name: existingUser.name, email: existingUser.email },
       deviceInfo: config.deviceInfo,
       ipInfo: config.ipInfo,
@@ -1058,7 +1058,7 @@ export class AuthService {
     const userObject = this.excludeSensitiveFields(existingUser.toObject());
 
     // Publish events
-    this.publisher.auth.publishUserLoggedInEvent({
+    EventBus.auth.emit(AuthenticationEvent.LOGGED_IN, {
       user: { name: userObject.name, email: userObject.email },
       deviceInfo: config.deviceInfo,
     });
@@ -1113,9 +1113,10 @@ export class AuthService {
     const user = this.excludeSensitiveFields(existingUser.toObject());
 
     // Publish events
-    this.publisher.auth.publishUser2faOtpGeneratedEvent({
+    EventBus.auth.emit(AuthenticationEvent.TWO_FACTOR_AUTH_OTP_GENERATED, {
       user,
       otp,
+      optExpiresInSeconds: env.twoFactorAuth.otp.expiresInSeconds,
     });
 
     return { expires: existingUser.twoFactorAuth.otp.expires };
@@ -1180,11 +1181,15 @@ export class AuthService {
     const user = this.excludeSensitiveFields(existingUser.toObject());
 
     // Publish events
-    this.publisher.auth.publishUser2faRecoveryOtpGeneratedEvent({
-      recoveryEmail: existingUser.recoveryDetails.email,
-      user,
-      otp,
-    });
+    EventBus.auth.emit(
+      AuthenticationEvent.TWO_FACTOR_AUTH_RECOVERY_OTP_GENERATED,
+      {
+        recoveryEmail: existingUser.recoveryDetails.email,
+        user,
+        otp,
+        optExpiresInSeconds: env.twoFactorAuth.otp.expiresInSeconds,
+      },
+    );
 
     return { expires: existingUser.twoFactorAuth.otp.expires };
   }
@@ -1444,7 +1449,7 @@ export class AuthService {
     const userObject = this.excludeSensitiveFields(existingUser.toObject());
 
     // Publish events
-    this.publisher.auth.publishUserLoggedInEvent({
+    EventBus.auth.emit(AuthenticationEvent.LOGGED_IN, {
       user: { name: userObject.name, email: userObject.email },
       deviceInfo: config.deviceInfo,
     });
@@ -1495,10 +1500,12 @@ export class AuthService {
       });
 
     // Publish events
-    this.publisher.auth.publishUserRecoveryEmailUpdateRequestedEvent({
+    EventBus.auth.emit(AuthenticationEvent.RECOVERY_EMAIL_UPDATE_REQUESTED, {
       user: { name: existingUser.name, email: existingUser.email },
       recoveryEmail: userDTO.newRecoveryEmail,
       emailVerificationToken: recoveryEmailVerificationToken,
+      tokenExpiresInSeconds:
+        env.auth.recoveryEmailVerificationTokenExpiresInSeconds,
     });
   }
 
@@ -1654,7 +1661,7 @@ export class AuthService {
     const userObject = this.excludeSensitiveFields(existingUser.toObject());
 
     // Publish events
-    this.publisher.auth.publishUserLoggedInEvent({
+    EventBus.auth.emit(AuthenticationEvent.LOGGED_IN, {
       user: { name: userObject.name, email: userObject.email },
       deviceInfo: config.deviceInfo,
     });

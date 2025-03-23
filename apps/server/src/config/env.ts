@@ -13,6 +13,7 @@ export default {
   port: process.env.PORT || 5000,
   url: process.env.URL || 'http://localhost:5000',
   db: {
+    endpoint: process.env.DB_ENDPOINT,
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 27017,
     name: process.env.DB_NAME || 'something',
@@ -90,7 +91,10 @@ export default {
     auth: {
       user: process.env.MAIL_USER,
       pass: process.env.MAIL_PASS,
+    },
+    sender: {
       name: process.env.MAIL_SENDER_NAME,
+      email: process.env.MAIL_SENDER_EMAIL,
     },
   },
   ipToGeo: {

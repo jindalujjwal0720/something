@@ -17,18 +17,21 @@ Security shouldn’t be an afterthought—it should be baked in.
 - **Multi-Factor Authentication**: Keep your users safe with MFA, including authenticator apps, OTPs, and backup codes.
 - **Password Management**: Password resets and changes made easy and secure.
 - **Anomalous Login Detection**: Automatically spot suspicious activity before it becomes problematic.
+- **Email Notifications**: Keep your users informed with email notifications for account changes.
 
 ### **Event-Driven Architecture**
 
 Embrace the future with a design that scales effortlessly.
 
-- **Node.js Event Emitter**: Employ the Pub/Sub pattern for dynamic event handling—let your app react to the world!
+- **Using Mitt**: Employ the Pub/Sub pattern for dynamic event handling—let your app react to the world!
 
 ### **Modular Repositories**
 
 Clean, maintainable code is the dream.
 
+- **Server-Side Rendering(SSR)**: Improve SEO and user experience with SSR for your frontend.
 - **Bulletproof Structure**: Organize your code into modular repositories, making it easy to manage and expand.
+- **Shared Codebase**: Share code between the frontend and backend, ensuring consistency and reducing duplication.
 
 ### **Vite & Node.js**
 
@@ -95,22 +98,21 @@ Ready to embark on your development journey? Here’s how to get started:
 3. **Initialise the project**
 
    ```bash
-   make init
+   npm run init
    ```
 
-4. **Run the app**
+4. **Run the app** in development mode or production mode
 
    ```bash
-   # terminal 1
-   make server
+   # Development mode
+   npm run dev
+
+   # Production mode
+   npm run build
+   npm start
    ```
 
-   ```bash
-   # terminal 2
-   make web
-   ```
-
-5. **Open your browser** and navigate to `http://localhost:3000`
+5. **Open your browser** and navigate to `http://localhost:6969` to see your app in action!
 
 ## 🤝 Contributing
 

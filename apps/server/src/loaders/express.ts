@@ -6,8 +6,10 @@ import compression from 'compression';
 import api from '../api';
 import { logger } from '../utils/logger';
 import * as useragent from 'express-useragent';
-import { UserAgentMiddleware } from '../api/middlewares/user-agent';
 import crypto from 'crypto';
+import path from 'path';
+import Router from 'file-express-router';
+import { extractDeviceInfo } from '../api/middlewares/user-agent';
 
 const expressLoader = async ({ app }: { app: express.Application }) => {
   app.get('/status', (req, res) => {
@@ -51,8 +53,7 @@ const expressLoader = async ({ app }: { app: express.Application }) => {
   app.use(compression());
   // Parse user-agent header
   app.use(useragent.express());
-  const userAgentMiddleware = new UserAgentMiddleware();
-  app.use(userAgentMiddleware.extractDeviceInfo);
+  app.use(extractDeviceInfo);
 
   app.get('/device', (req, res) => {
     res.json({
@@ -72,6 +73,12 @@ const expressLoader = async ({ app }: { app: express.Application }) => {
   }
 
   // Load all routes
+  const router = await Router({
+    dir: path.join(__dirname, '../api/file-routes'),
+    logger: false,
+  });
+  app.use('/api/v1', router);
+
   app.use('/api/v1', api);
 };
 

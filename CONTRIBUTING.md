@@ -79,22 +79,31 @@ Ready to embark on your development journey? Here’s how to get started:
 3. **Initialise the project**
 
    ```bash
-    make init
+   npm run init
    ```
 
-4. **Run the app**
+4. **Run the app** in development mode
 
    ```bash
-   # terminal 1
-   make server
+   # Development mode
+   npm run dev
    ```
 
-   ```bash
-   # terminal 2
-   make web
-   ```
+5. **Open your browser** and navigate to `http://localhost:6969` to see your app in action!
 
-5. **Open your browser** and navigate to `http://localhost:3000`
+## Installing Dependencies
+
+To install any new dependencies, use the following command:
+
+```bash
+npm install <package-name> -w apps/<app-name>
+# For example
+
+npm install express -w apps/server
+
+# Or to install a dev dependency
+npm install --save-dev typescript -w apps/server
+```
 
 ## License
 

@@ -7,6 +7,7 @@ node_modules
 build
 dist-ssr
 *.local
+src/api/file-routes/index.ts
 
 # Editor directories and files
 .vscode/*

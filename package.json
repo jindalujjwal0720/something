@@ -6,6 +6,7 @@
     "apps/*"
   ],
   "scripts": {
+    "init": "npm run install",
     "install": "npm install --workspaces",
     "build": "npm run build:web && npm run build:server && npx copyfiles apps/web/dist/**/* apps/server/dist/web -u 2",
     "dev": "npm run dev:server",

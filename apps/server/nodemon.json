@@ -6,6 +6,10 @@
     "../web/ssr-module.ts"
   ],
   "ext": "ts",
-  "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts"],
+  "ignore": [
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts",
+    "src/api/file-routes/index.ts"
+  ],
   "exec": "tsc --noEmit && tsx src/app.ts"
 }

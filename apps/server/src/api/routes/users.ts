@@ -1,24 +1,15 @@
 import express from 'express';
 import { UserController } from '../controllers/user';
-import { RateLimiterMiddleware } from '../middlewares/rate-limit';
-import { AuthMiddleware } from '../middlewares/authentication';
+import { rateLimiter } from '../middlewares/rate-limit';
+import { requireAuthenticated } from '../middlewares/authentication';
 
 const router = express.Router();
 const userController = new UserController();
-const authMiddleware = new AuthMiddleware();
-const rateLimiterMiddleware = new RateLimiterMiddleware();
 
-router.get(
-  '/me',
-  rateLimiterMiddleware.limiter,
-  authMiddleware.requireAuthenticated.bind(authMiddleware),
-  userController.getMe.bind(userController),
-);
-router.patch(
-  '/me',
-  rateLimiterMiddleware.limiter,
-  authMiddleware.requireAuthenticated.bind(authMiddleware),
-  userController.updateMe.bind(userController),
-);
+router.use(rateLimiter);
+router.use(requireAuthenticated);
+
+router.get('/me', userController.getMe.bind(userController));
+router.patch('/me', userController.updateMe.bind(userController));
 
 export default router;

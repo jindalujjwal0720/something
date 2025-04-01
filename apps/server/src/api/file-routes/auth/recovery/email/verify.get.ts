@@ -48,4 +48,4 @@ const verifyRecoveryEmailHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [validatorMiddleware, verifyRecoveryEmailHandler];
+export default [validatorMiddleware, verifyRecoveryEmailHandler];

@@ -131,8 +131,4 @@ const resetPasswordHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [
-  validatorMiddleware,
-  extractIpInfo,
-  resetPasswordHandler,
-];
+export default [validatorMiddleware, extractIpInfo, resetPasswordHandler];

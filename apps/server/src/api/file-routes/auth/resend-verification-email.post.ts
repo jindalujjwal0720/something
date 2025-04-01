@@ -76,7 +76,7 @@ const resendEmailVerificationHandler: RequestHandler = async (
   }
 };
 
-export const handler = [
+export default [
   emailRateLimiter,
   validatorMiddleware,
   resendEmailVerificationHandler,

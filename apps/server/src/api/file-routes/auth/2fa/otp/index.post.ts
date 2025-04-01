@@ -74,8 +74,4 @@ const sendLoginOtpHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [
-  emailRateLimiter,
-  validatorMiddleware,
-  sendLoginOtpHandler,
-];
+export default [emailRateLimiter, validatorMiddleware, sendLoginOtpHandler];

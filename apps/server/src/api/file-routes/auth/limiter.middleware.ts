@@ -1,3 +1,3 @@
 import { rateLimiter } from '../../middlewares/rate-limit';
 
-export const handler = rateLimiter;
+export default rateLimiter;

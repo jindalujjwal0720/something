@@ -85,4 +85,4 @@ const enable2faHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [extractIpInfo, validatorMiddleware, enable2faHandler];
+export default [extractIpInfo, validatorMiddleware, enable2faHandler];

@@ -188,4 +188,4 @@ const verifyOtpAndLoginHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [validatorMiddleware, verifyOtpAndLoginHandler];
+export default [validatorMiddleware, verifyOtpAndLoginHandler];

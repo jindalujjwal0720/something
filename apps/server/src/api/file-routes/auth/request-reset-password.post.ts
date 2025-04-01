@@ -61,7 +61,7 @@ const requestResetPasswordHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [
+export default [
   emailRateLimiter,
   validatorMiddleware,
   requestResetPasswordHandler,

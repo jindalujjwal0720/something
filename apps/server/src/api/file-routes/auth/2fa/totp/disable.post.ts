@@ -73,8 +73,4 @@ const disable2faTotpHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [
-  validatorMiddleware,
-  extractDeviceInfo,
-  disable2faTotpHandler,
-];
+export default [validatorMiddleware, extractDeviceInfo, disable2faTotpHandler];

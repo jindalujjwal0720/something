@@ -80,7 +80,7 @@ const requestRecoveryEmailUpdateHandler: RequestHandler = async (
   }
 };
 
-export const handler = [
+export default [
   emailRateLimiter,
   validatorMiddleware,
   requestRecoveryEmailUpdateHandler,

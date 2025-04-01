@@ -73,4 +73,4 @@ const regenerate2faTotpHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [validatorMiddleware, regenerate2faTotpHandler];
+export default [validatorMiddleware, regenerate2faTotpHandler];

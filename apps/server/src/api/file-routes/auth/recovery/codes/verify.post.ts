@@ -185,4 +185,4 @@ const verifyRecoveryCodeAndLoginHandler: RequestHandler = async (
   }
 };
 
-export const handler = [validatorMiddleware, verifyRecoveryCodeAndLoginHandler];
+export default [validatorMiddleware, verifyRecoveryCodeAndLoginHandler];

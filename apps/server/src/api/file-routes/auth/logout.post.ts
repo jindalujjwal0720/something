@@ -70,4 +70,4 @@ const logoutHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = logoutHandler;
+export default logoutHandler;

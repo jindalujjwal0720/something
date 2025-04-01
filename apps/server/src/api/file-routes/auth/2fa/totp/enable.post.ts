@@ -74,4 +74,4 @@ const enable2faTotpHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [validatorMiddleware, enable2faTotpHandler];
+export default [validatorMiddleware, enable2faTotpHandler];

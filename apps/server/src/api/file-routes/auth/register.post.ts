@@ -89,4 +89,4 @@ const registerHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [emailRateLimiter, validatorMiddleware, registerHandler];
+export default [emailRateLimiter, validatorMiddleware, registerHandler];

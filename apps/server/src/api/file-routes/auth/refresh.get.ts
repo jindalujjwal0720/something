@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import { env } from '../../../config';
 import {
-  checkSameDevice,
+  // checkSameDevice,
   excludeSensitiveFields,
   generateAccessToken,
   generatePayload,
@@ -13,13 +13,13 @@ import { UnauthorizedError } from '../../../utils/errors';
 import { UserRefreshTokensConfig } from '../../../types/services/auth';
 import User from '../../../models/user';
 import { IUser } from '../../../types/models/user';
-import { AuthenticationEvent } from '../../../events/auth/events';
-import { EventBus } from '../../../events/bus';
+// import { AuthenticationEvent } from '../../../events/auth/events';
+// import { EventBus } from '../../../events/bus';
 import { extractIpInfo } from '../../middlewares/user-agent';
 
 async function refreshTokens(
   refreshToken: string,
-  { deviceInfo, ipInfo }: UserRefreshTokensConfig,
+  { deviceInfo, ipInfo: _ }: UserRefreshTokensConfig,
 ): Promise<{ user: IUser; accessToken: string; refreshToken: string }> {
   const decodedRefreshToken = JSON.parse(
     Buffer.from(refreshToken, 'base64').toString('utf-8'),
@@ -43,22 +43,24 @@ async function refreshTokens(
     throw new UnauthorizedError('Refresh token expired');
   }
 
-  if (!checkSameDevice(deviceInfo, refreshTokenObject)) {
-    // Sign out from all devices
-    existingUser.refreshTokens = [];
-    await existingUser.save();
+  // TODO: This part needs to be checked
+  // TODO: This is emiting falsely event for force logout
+  // if (!checkSameDevice(deviceInfo, refreshTokenObject)) {
+  //   // Sign out from all devices
+  //   existingUser.refreshTokens = [];
+  //   await existingUser.save();
 
-    // Publish events for force logout
-    EventBus.auth.emit(AuthenticationEvent.FORCE_LOGGED_OUT, {
-      user: { name: existingUser.name, email: existingUser.email },
-      deviceInfo,
-      ipInfo,
-    });
+  //   // Publish events for force logout
+  //   EventBus.auth.emit(AuthenticationEvent.FORCE_LOGGED_OUT, {
+  //     user: { name: existingUser.name, email: existingUser.email },
+  //     deviceInfo,
+  //     ipInfo,
+  //   });
 
-    throw new UnauthorizedError(
-      'Device mismatch. Logged out from all devices.',
-    );
-  }
+  //   throw new UnauthorizedError(
+  //     'Device mismatch. Logged out from all devices.',
+  //   );
+  // }
 
   const payload = await generatePayload(existingUser);
   const accessToken = await generateAccessToken(payload);
@@ -111,4 +113,4 @@ const refreshHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [extractIpInfo, refreshHandler];
+export default [extractIpInfo, refreshHandler];

@@ -66,4 +66,4 @@ const regenerateRecoveryCodesHandler: RequestHandler = async (
   }
 };
 
-export const handler = [validatorMiddleware, regenerateRecoveryCodesHandler];
+export default [validatorMiddleware, regenerateRecoveryCodesHandler];

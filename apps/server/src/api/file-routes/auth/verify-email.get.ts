@@ -46,4 +46,4 @@ const verifyEmailHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [validatorMiddleware, verifyEmailHandler];
+export default [validatorMiddleware, verifyEmailHandler];

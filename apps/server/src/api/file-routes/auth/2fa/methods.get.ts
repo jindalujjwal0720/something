@@ -48,4 +48,4 @@ const list2faMethodsHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [validatorMiddleware, list2faMethodsHandler];
+export default [validatorMiddleware, list2faMethodsHandler];

@@ -176,4 +176,4 @@ const loginHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const handler = [validatorMiddleware, loginHandler];
+export default [validatorMiddleware, loginHandler];

@@ -21,7 +21,8 @@
     "start:server": "cd apps/server && npm run start",
     "lint:server": "cd apps/server && npm run lint",
     "format:server": "cd apps/server && npm run format",
-    "test:server": "cd apps/server && npm run test"
+    "test:server": "cd apps/server && npm run test",
+    "dev:next": "cd apps/next && npm run dev"
   },
   "dependencies": {
     "copyfiles": "^2.4.1"

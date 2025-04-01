@@ -1,5 +1,5 @@
 import { RequestHandler } from 'express';
-import User from '../../../../models/user';
+import Account from '../../../../models/account';
 import { BadRequestError, NotFoundError } from '../../../../utils/errors';
 import { verify2FAToken } from '../../../../utils/auth';
 import { celebrate, Joi, Segments } from 'celebrate';
@@ -13,23 +13,20 @@ const validatorMiddleware = celebrate({
 async function list2faLoginMethods(token: string): Promise<string[]> {
   const { email } = await verify2FAToken(token);
 
-  const existingUser = await User.findOne({ email }).select(
+  const account = await Account.findOne({ email }).select(
     '+twoFactorAuth +recoveryDetails',
   );
-  if (!existingUser) {
-    throw new NotFoundError('User not found');
-  }
-
-  if (!existingUser.twoFactorAuth?.enabled) {
+  if (!account) throw new NotFoundError('Account not found');
+  if (!account.twoFactorAuth?.enabled) {
     throw new BadRequestError('2FA not enabled for the user');
   }
 
   const methods: string[] = ['otp']; // OTP based 2FA enabled by default
   methods.push('recovery'); // Recovery codes are always available
-  if (existingUser.twoFactorAuth.totp?.enabled) {
+  if (account.twoFactorAuth.totp?.enabled) {
     methods.push('totp');
   }
-  if (existingUser.recoveryDetails?.emailVerified) {
+  if (account.recoveryDetails?.emailVerified) {
     methods.push('recovery-email');
   }
 

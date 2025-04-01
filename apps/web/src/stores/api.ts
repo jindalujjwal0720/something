@@ -46,7 +46,7 @@ const baseQueryWithRefreshAnd2faRedirect = async (
       api.dispatch(setAccessToken(refreshResult.data));
       api.dispatch(
         setRole(
-          (refreshResult.data as { user: { roles: string[] } }).user
+          (refreshResult.data as { account: { roles: string[] } }).account
             ?.roles?.[0],
         ),
       );

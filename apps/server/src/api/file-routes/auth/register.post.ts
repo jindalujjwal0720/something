@@ -1,10 +1,9 @@
 import { RequestHandler } from 'express';
 import Joi from 'joi';
 import { ConflictError } from '../../../utils/errors';
-import { UserRegisterDTO } from '../../../types/services/auth';
-import { IUser } from '../../../types/models/user';
+import { IAccount } from '../../../types/models/account';
 import { EventBus } from '../../../events/bus';
-import User from '../../../models/user';
+import Account from '../../../models/account';
 import {
   excludeSensitiveFields,
   generateEmailVerificationToken,
@@ -15,11 +14,16 @@ import { AuthenticationEvent } from '../../../events/auth/events';
 import { env } from '../../../config';
 import { emailRateLimiter } from '../../middlewares/rate-limit';
 import { celebrate, Segments } from 'celebrate';
+import User from '../../../models/user';
+import { IUser } from '../../../types/models/user';
 
 const validatorMiddleware = celebrate({
   [Segments.BODY]: Joi.object().keys({
     user: Joi.object().keys({
       name: Joi.string().required().min(3).max(50),
+      imageUrl: Joi.string().optional().uri(),
+    }),
+    account: Joi.object().keys({
       email: Joi.string().email().required(),
       password: Joi.string()
         .required()
@@ -33,57 +37,61 @@ const validatorMiddleware = celebrate({
           'string.pattern.base':
             'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character(#@$!%*?&)',
         }),
-      confirmPassword: Joi.string()
-        .required()
-        .valid(Joi.ref('password'))
-        .messages({ 'any.only': 'Passwords do not match' }),
-      imageUrl: Joi.string().optional().uri(),
     }),
   }),
 });
 
-async function register(userDTO: UserRegisterDTO): Promise<{ user: IUser }> {
-  const existingUser = await User.findOne({
-    email: userDTO.email,
+async function register(
+  userInfo: Partial<IUser>,
+  accountInfo: Pick<IAccount, 'email'> & { password: string },
+): Promise<void> {
+  const existingAccount = await Account.findOne({
+    email: accountInfo.email,
   });
-  if (existingUser) {
+  if (existingAccount) {
     throw new ConflictError('User with this email already exists');
   }
 
-  const hashedPassword = await hashPassword(userDTO.password);
-  const createdUser = new User({
-    ...userDTO,
+  const hashedPassword = await hashPassword(accountInfo.password);
+  const createdAccount = new Account({
+    ...accountInfo,
     password: undefined,
     passwordHash: hashedPassword,
     role: 'user',
   });
 
-  const payload = await generatePayload(createdUser);
-  createdUser.emailVerificationToken = generateEmailVerificationToken(payload);
-  createdUser.emailVerificationTokenExpires = new Date(
+  const payload = await generatePayload(createdAccount);
+  createdAccount.emailVerificationToken =
+    generateEmailVerificationToken(payload);
+  createdAccount.emailVerificationTokenExpires = new Date(
     Date.now() + env.auth.emailVerificationTokenExpiresInSeconds * 1000,
   );
-  await createdUser.save();
+  await createdAccount.save();
 
-  const user = excludeSensitiveFields(createdUser.toObject());
+  const createdUser = await User.create({
+    ...userInfo,
+    account: createdAccount._id,
+  });
+
+  const sanitisedAccount = excludeSensitiveFields(createdAccount.toObject());
 
   // Publish events
   EventBus.auth.emit(AuthenticationEvent.EMAIL_VERIFICATION_REQUESTED, {
-    user,
-    emailVerificationToken: createdUser.emailVerificationToken as string,
+    user: { name: createdUser.name, email: sanitisedAccount.email },
+    emailVerificationToken: createdAccount.emailVerificationToken as string,
     tokenExpiresInSeconds: env.auth.emailVerificationTokenExpiresInSeconds,
   });
-  EventBus.auth.emit(AuthenticationEvent.REGISTERED, { user });
-
-  return { user };
+  EventBus.auth.emit(AuthenticationEvent.REGISTERED, {
+    user: { name: createdUser.name, email: sanitisedAccount.email },
+  });
 }
 
 const registerHandler: RequestHandler = async (req, res, next) => {
   try {
-    const { user } = req.body;
-    const { user: registeredUser } = await register(user);
+    const { user, account } = req.body;
+    await register(user, account);
 
-    res.status(201).json({ user: registeredUser });
+    res.status(201).send();
   } catch (err) {
     next(err);
   }

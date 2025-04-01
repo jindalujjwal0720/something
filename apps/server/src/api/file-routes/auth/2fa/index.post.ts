@@ -1,6 +1,5 @@
 import { RequestHandler } from 'express';
-import { Enable2FAConfig, Enable2FADTO } from '../../../../types/services/auth';
-import User from '../../../../models/user';
+import Account from '../../../../models/account';
 import {
   BadRequestError,
   NotFoundError,
@@ -15,6 +14,11 @@ import { AuthenticationEvent } from '../../../../events/auth/events';
 import { EventBus } from '../../../../events/bus';
 import { extractIpInfo } from '../../../middlewares/user-agent';
 import { celebrate, Joi, Segments } from 'celebrate';
+import User from '../../../../models/user';
+import {
+  IDeviceInfo,
+  IUserIPInfo,
+} from '../../../../types/middlewares/user-agent';
 
 const validatorMiddleware = celebrate({
   [Segments.BODY]: Joi.object().keys({
@@ -24,43 +28,44 @@ const validatorMiddleware = celebrate({
 });
 
 async function enable2FA(
-  userDTO: Enable2FADTO,
-  config: Enable2FAConfig,
+  creds: { email: string; password: string },
+  config: { deviceInfo: IDeviceInfo; ipInfo: IUserIPInfo },
 ): Promise<{ recoveryCodes: string[] }> {
-  const { email, password } = userDTO;
-  const existingUser = await User.findOne({ email }).select(
+  const { email, password } = creds;
+  const account = await Account.findOne({ email }).select(
     '+twoFactorAuth +passwordHash +recoveryDetails',
   );
-  if (!existingUser) {
-    throw new NotFoundError('User not found');
-  }
+  if (!account) throw new NotFoundError('Account not found');
 
-  if (existingUser.twoFactorAuth?.enabled) {
+  if (account.twoFactorAuth?.enabled) {
     throw new BadRequestError('2FA already enabled for the user');
   }
 
   const passwordsMatch = await comparePasswords(
     password,
-    existingUser.passwordHash || '',
+    account.passwordHash || '',
   );
   if (!passwordsMatch) {
     throw new UnauthorizedError('Incorrect password');
   }
 
-  existingUser.twoFactorAuth = {
+  account.twoFactorAuth = {
     enabled: true,
     otp: { enabled: true }, // OTP based 2FA enabled by default
     totp: { enabled: false },
   };
   const backupCodes = await generateBackupCodes();
-  existingUser.recoveryDetails = {
+  account.recoveryDetails = {
     backupCodes: backupCodes.map((code) => ({ code })),
   };
-  await existingUser.save();
+  await account.save();
+
+  const user = await User.findOne({ account: account._id });
+  if (!user) throw new NotFoundError('User not found');
 
   // Publish events
   EventBus.auth.emit(AuthenticationEvent.TWO_FACTOR_AUTH_ENABLED, {
-    user: { name: existingUser.name, email: existingUser.email },
+    user: { name: user.name, email: account.email },
     deviceInfo: config.deviceInfo,
     ipInfo: config.ipInfo,
   });
@@ -71,13 +76,10 @@ async function enable2FA(
 
 const enable2faHandler: RequestHandler = async (req, res, next) => {
   try {
-    const data = req.body;
+    const creds = req.body;
     const { deviceInfo, ipInfo } = res.locals;
 
-    const { recoveryCodes } = await enable2FA(data, {
-      deviceInfo,
-      ipInfo,
-    });
+    const { recoveryCodes } = await enable2FA(creds, { deviceInfo, ipInfo });
 
     res.status(200).json({ recoveryCodes });
   } catch (err) {

@@ -67,7 +67,13 @@ const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      const payload = await registerUser({ user: data }).unwrap();
+      const payload = await registerUser({
+        user: {
+          name: data.name,
+          imageUrl: undefined,
+        },
+        account: { email: data.email, password: data.password },
+      }).unwrap();
       if (onSuccess instanceof Function) {
         onSuccess(payload);
       }

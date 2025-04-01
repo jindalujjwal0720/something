@@ -52,7 +52,12 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const payload = await loginUser({ user: data }).unwrap();
+      const payload = await loginUser({
+        account: {
+          email: data.email,
+          password: data.password,
+        },
+      }).unwrap();
       if (onSuccess) {
         onSuccess(payload);
       }
@@ -80,7 +85,11 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your email" {...field} />
+                    <Input
+                      placeholder="Your email"
+                      autoComplete="email"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,6 +105,7 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
                     <Input
                       type="password"
                       placeholder="Your password"
+                      autoComplete="current-password"
                       {...field}
                     />
                   </FormControl>

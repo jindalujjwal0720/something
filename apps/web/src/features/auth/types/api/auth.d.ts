@@ -1,58 +1,50 @@
+import { SanitisedAccount } from '@/types/models/account';
 import { IUser } from '@/types/models/user';
 
 export interface GetMeResponse {
   user: IUser;
+  account: SanitisedAccount;
 }
 
 export interface UpdateMeDTO {
   user: Partial<IUser>;
 }
 
-export type UpdateMeResponse = {
-  user: IUser;
-};
+export type UpdateMeResponse = void;
 
 export interface RegisterDTO {
   user: {
     name: string;
+    imageUrl?: string;
+  };
+  account: {
     email: string;
     password: string;
-    confirmPassword: string;
   };
 }
 
-export type RegisterResponse = {
-  token: string;
-  user: IUser;
-};
+export type RegisterResponse = void;
 
 export interface LoginDTO {
-  user: {
+  account: {
     email: string;
     password: string;
   };
 }
 
 export type LoginResponse =
-  | {
-      user: IUser;
-      token: string;
-    }
-  | {
-      requires2FA: boolean;
-      token: string;
-    };
+  | { token: string; account: SanitisedAccount }
+  | { requires2FA: boolean; token: string };
 
 export type LogoutResponse = {
   message: string;
 };
 
 export interface ResetPasswordDTO {
-  user: {
+  account: {
     email: string;
     currentPasswordOrToken: string;
     newPassword: string;
-    confirmPassword: string;
   };
 }
 
@@ -61,7 +53,7 @@ export type ResetPasswordResponse = {
 };
 
 export interface RequestResetPasswordDTO {
-  user: {
+  account: {
     email: string;
   };
 }
@@ -79,7 +71,7 @@ export type VerifyEmailResponse = {
 };
 
 export interface ResendEmailVerificationDTO {
-  user: {
+  account: {
     email: string;
   };
 }
@@ -126,7 +118,7 @@ export interface Verify2faOtpDTO {
 }
 
 export type Verify2faOtpResponse = {
-  user: IUser;
+  account: SanitisedAccount;
   token: string;
 };
 
@@ -163,7 +155,7 @@ export interface Verify2faTotpDTO {
 }
 
 export type Verify2faTotpResponse = {
-  user: IUser;
+  account: SanitisedAccount;
   token: string;
 };
 
@@ -192,6 +184,6 @@ export interface LoginWithRecoveryCodeDTO {
 }
 
 export type LoginWithRecoveryCodeResponse = {
-  user: IUser;
+  account: SanitisedAccount;
   token: string;
 };

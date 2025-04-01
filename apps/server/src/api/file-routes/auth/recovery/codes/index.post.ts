@@ -1,6 +1,5 @@
 import { RequestHandler } from 'express';
-import { RegenerateRecoveryCodesDTO } from '../../../../../types/services/auth';
-import User from '../../../../../models/user';
+import Account from '../../../../../models/account';
 import { NotFoundError, UnauthorizedError } from '../../../../../utils/errors';
 import {
   comparePasswords,
@@ -16,32 +15,31 @@ const validatorMiddleware = celebrate({
   }),
 });
 
-async function regenerateRecoveryCodes(
-  userDTO: RegenerateRecoveryCodesDTO,
-): Promise<{ recoveryCodes: string[] }> {
-  const existingUser = await User.findOne({ email: userDTO.email }).select(
+async function regenerateRecoveryCodes(creds: {
+  email: string;
+  password: string;
+}): Promise<{ recoveryCodes: string[] }> {
+  const account = await Account.findOne({ email: creds.email }).select(
     '+passwordHash +recoveryDetails',
   );
-  if (!existingUser) {
-    throw new NotFoundError('User not found');
-  }
+  if (!account) throw new NotFoundError('Account not found');
 
   const passwordsMatch = await comparePasswords(
-    userDTO.password,
-    existingUser.passwordHash || '',
+    creds.password,
+    account.passwordHash || '',
   );
   if (!passwordsMatch) {
     throw new UnauthorizedError('Incorrect password');
   }
 
   const recoveryCodes = await generateBackupCodes();
-  existingUser.recoveryDetails = {
-    ...(existingUser.recoveryDetails || {
+  account.recoveryDetails = {
+    ...(account.recoveryDetails || {
       emailVerified: false,
     }),
     backupCodes: recoveryCodes.map((code) => ({ code })),
   };
-  await existingUser.save();
+  await account.save();
 
   const decryptedCodes = await Promise.all(
     recoveryCodes.map(decryptBackupCode),
@@ -56,9 +54,9 @@ const regenerateRecoveryCodesHandler: RequestHandler = async (
   next,
 ) => {
   try {
-    const user = req.body;
+    const creds = req.body;
 
-    const { recoveryCodes } = await regenerateRecoveryCodes(user);
+    const { recoveryCodes } = await regenerateRecoveryCodes(creds);
 
     res.status(200).json({ recoveryCodes });
   } catch (err) {

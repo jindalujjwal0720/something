@@ -12,7 +12,7 @@ const Verify2FAAuthenticator = () => {
 
   const handleSuccessfulLogin = (data: Verify2faTotpResponse) => {
     dispatch(setAccessToken(data.token));
-    dispatch(setRole(data.user.roles[0]));
+    dispatch(setRole(data.account.roles[0]));
     navigate(redirectUri || '/');
   };
 

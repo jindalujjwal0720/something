@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import { emailRateLimiter } from '../../middlewares/rate-limit';
 import { BadRequestError, NotFoundError } from '../../../utils/errors';
-import User from '../../../models/user';
+import Account from '../../../models/account';
 import {
   excludeSensitiveFields,
   generateEmailVerificationToken,
@@ -11,47 +11,51 @@ import { env } from '../../../config';
 import { AuthenticationEvent } from '../../../events/auth/events';
 import { EventBus } from '../../../events/bus';
 import { celebrate, Joi, Segments } from 'celebrate';
+import User from '../../../models/user';
 
 const validatorMiddleware = celebrate({
   [Segments.BODY]: Joi.object().keys({
-    user: Joi.object().keys({
+    account: Joi.object().keys({
       email: Joi.string().email().required(),
     }),
   }),
 });
 
 async function resendEmailVerification(email: string): Promise<void> {
-  const existingUser = await User.findOne({ email }).select(
+  const account = await Account.findOne({ email }).select(
     '+emailVerificationToken +emailVerificationTokenExpires',
   );
-  if (!existingUser) {
-    throw new NotFoundError('User not found');
+  if (!account) {
+    throw new NotFoundError('Account not found');
   }
 
-  if (existingUser.isEmailVerified) {
-    throw new BadRequestError('Email already verified');
+  if (account.isEmailVerified) {
+    throw new BadRequestError('Email already verified.');
   }
 
   if (
-    existingUser.emailVerificationTokenExpires &&
-    existingUser.emailVerificationTokenExpires > new Date()
+    account.emailVerificationTokenExpires &&
+    account.emailVerificationTokenExpires > new Date()
   ) {
     throw new BadRequestError('Email verification token already sent.');
   }
 
-  const payload = await generatePayload(existingUser);
-  existingUser.emailVerificationToken = generateEmailVerificationToken(payload);
-  existingUser.emailVerificationTokenExpires = new Date(
+  const payload = await generatePayload(account);
+  account.emailVerificationToken = generateEmailVerificationToken(payload);
+  account.emailVerificationTokenExpires = new Date(
     Date.now() + env.auth.emailVerificationTokenExpiresInSeconds * 1000,
   );
-  await existingUser.save();
+  await account.save();
 
-  const user = excludeSensitiveFields(existingUser.toObject());
+  const sanitisedAccount = excludeSensitiveFields(account.toObject());
+
+  const user = await User.findOne({ account: sanitisedAccount._id });
+  if (!user) throw new NotFoundError('User not found');
 
   // Publish events
   EventBus.auth.emit(AuthenticationEvent.EMAIL_VERIFICATION_REQUESTED, {
-    user,
-    emailVerificationToken: existingUser.emailVerificationToken,
+    user: { name: user.name, email: account.email },
+    emailVerificationToken: account.emailVerificationToken,
     tokenExpiresInSeconds: env.auth.emailVerificationTokenExpiresInSeconds,
   });
 
@@ -64,9 +68,9 @@ const resendEmailVerificationHandler: RequestHandler = async (
   next,
 ) => {
   try {
-    const { user } = req.body;
+    const { account } = req.body;
 
-    await resendEmailVerification(user.email);
+    await resendEmailVerification(account.email);
 
     res
       .status(200)

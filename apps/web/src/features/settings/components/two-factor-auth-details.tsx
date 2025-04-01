@@ -10,7 +10,7 @@ import { useAuth } from '@/features/auth/components/auth-provider';
 import { useNavigate } from 'react-router-dom';
 
 const TwoFactorAuthenticationDetails = () => {
-  const { user } = useAuth();
+  const { account } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -33,9 +33,9 @@ const TwoFactorAuthenticationDetails = () => {
             </div>
             <Button
               onClick={() => navigate('/settings/security/2fa')}
-              variant={user?.twoFactorAuth?.enabled ? 'ghost' : 'default'}
+              variant={account?.twoFactorAuth?.enabled ? 'ghost' : 'default'}
             >
-              {user?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'}
+              {account?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'}
             </Button>
           </div>
           <div className="flex pt-4 items-center justify-between gap-4">
@@ -49,10 +49,10 @@ const TwoFactorAuthenticationDetails = () => {
             </div>
             <Button
               variant="ghost"
-              disabled={!user?.twoFactorAuth?.enabled}
+              disabled={!account?.twoFactorAuth?.enabled}
               onClick={() => navigate('/settings/security/authenticator')}
             >
-              {user?.twoFactorAuth?.totp?.enabled ? 'Enabled' : 'Setup'}
+              {account?.twoFactorAuth?.totp?.enabled ? 'Enabled' : 'Setup'}
             </Button>
           </div>
           <div className="flex pt-4 items-center justify-between gap-4">

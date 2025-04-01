@@ -13,7 +13,7 @@ const Login = () => {
       navigate(`/auth/2fa?token=${data.token}`);
     } else {
       dispatch(setAccessToken(data.token));
-      dispatch(setRole(data.user.roles[0]));
+      dispatch(setRole(data.account.roles[0]));
       navigate('/');
     }
   };

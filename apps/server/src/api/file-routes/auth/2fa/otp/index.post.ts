@@ -5,13 +5,14 @@ import {
   hashPassword,
   verify2FAToken,
 } from '../../../../../utils/auth';
-import User from '../../../../../models/user';
+import Account from '../../../../../models/account';
 import { BadRequestError, NotFoundError } from '../../../../../utils/errors';
 import { env } from '../../../../../config';
 import { EventBus } from '../../../../../events/bus';
 import { AuthenticationEvent } from '../../../../../events/auth/events';
 import { celebrate, Joi, Segments } from 'celebrate';
 import { emailRateLimiter } from '../../../../middlewares/rate-limit';
+import User from '../../../../../models/user';
 
 const validatorMiddleware = celebrate({
   [Segments.BODY]: Joi.object().keys({
@@ -22,21 +23,18 @@ const validatorMiddleware = celebrate({
 async function sendLoginOtp(token: string): Promise<{ expires: Date }> {
   const { email } = await verify2FAToken(token);
 
-  const existingUser = await User.findOne({ email }).select('+twoFactorAuth');
-  if (!existingUser) {
+  const account = await Account.findOne({ email }).select('+twoFactorAuth');
+  if (!account) {
     throw new NotFoundError('User not found');
   }
 
-  if (
-    !existingUser.twoFactorAuth?.enabled ||
-    !existingUser.twoFactorAuth.otp.enabled
-  ) {
+  if (!account.twoFactorAuth?.enabled || !account.twoFactorAuth.otp.enabled) {
     throw new BadRequestError('OTP based 2FA not enabled for this user');
   }
 
   if (
-    existingUser.twoFactorAuth.otp.expires &&
-    existingUser.twoFactorAuth.otp.expires > new Date()
+    account.twoFactorAuth.otp.expires &&
+    account.twoFactorAuth.otp.expires > new Date()
   ) {
     throw new BadRequestError(
       'You already have an active OTP. Please wait for it to expire.',
@@ -44,22 +42,24 @@ async function sendLoginOtp(token: string): Promise<{ expires: Date }> {
   }
 
   const otp = await generateRandomOTP();
-  existingUser.twoFactorAuth.otp.hash = await hashPassword(otp);
-  existingUser.twoFactorAuth.otp.expires = new Date(
+  account.twoFactorAuth.otp.hash = await hashPassword(otp);
+  account.twoFactorAuth.otp.expires = new Date(
     Date.now() + env.twoFactorAuth.otp.expiresInSeconds * 1000,
   );
-  await existingUser.save();
+  await account.save();
+  const sanitizedAccount = excludeSensitiveFields(account.toObject());
 
-  const user = excludeSensitiveFields(existingUser.toObject());
+  const user = await User.findOne({ account: sanitizedAccount._id });
+  if (!user) throw new NotFoundError('User not found');
 
   // Publish events
   EventBus.auth.emit(AuthenticationEvent.TWO_FACTOR_AUTH_OTP_GENERATED, {
-    user,
+    user: { name: user.name, email: account.email },
     otp,
     optExpiresInSeconds: env.twoFactorAuth.otp.expiresInSeconds,
   });
 
-  return { expires: existingUser.twoFactorAuth.otp.expires };
+  return { expires: account.twoFactorAuth.otp.expires };
 }
 
 const sendLoginOtpHandler: RequestHandler = async (req, res, next) => {

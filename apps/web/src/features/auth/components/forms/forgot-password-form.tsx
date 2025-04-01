@@ -43,7 +43,7 @@ const ForgotPasswordForm = () => {
   const onSubmit = async (data: ForgotPasswordFormValues) => {
     try {
       const payload = await requestResetPassword({
-        user: data,
+        account: data,
       }).unwrap();
       toast.success(payload.message);
     } catch (err) {

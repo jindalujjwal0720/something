@@ -27,24 +27,24 @@ type UpdateRecoveryEmailFormValues = z.infer<
 >;
 
 const UpdateRecoveryEmailForm = () => {
-  const { user } = useAuth();
+  const { account } = useAuth();
   const form = useForm<UpdateRecoveryEmailFormValues>({
     resolver: zodResolver(updateRecoveryEmailFormSchema),
     defaultValues: {
-      recoveryEmail: user?.recoveryDetails?.email || '',
+      recoveryEmail: account?.recoveryDetails?.email || '',
       password: '',
     },
   });
   const [requestUpdateRecoveryEmail] = useRequestUpdateRecoveryEmailMutation();
 
   const onSubmit = async (data: UpdateRecoveryEmailFormValues) => {
-    if (form.getValues('recoveryEmail') === user?.recoveryDetails?.email) {
+    if (form.getValues('recoveryEmail') === account?.recoveryDetails?.email) {
       toast.info('Recovery email is already set.');
       return;
     }
     try {
       const payload = await requestUpdateRecoveryEmail({
-        email: user?.email || '',
+        email: account?.email || '',
         newRecoveryEmail: data.recoveryEmail,
         password: data.password,
       }).unwrap();
@@ -65,7 +65,7 @@ const UpdateRecoveryEmailForm = () => {
             <FormItem>
               <FormLabel className="flex gap-2">
                 <span>Recovery email</span>
-                {field.value === user?.recoveryDetails?.email && (
+                {field.value === account?.recoveryDetails?.email && (
                   <CheckCircledIcon className="size-4 text-green-600" />
                 )}
               </FormLabel>
@@ -75,7 +75,7 @@ const UpdateRecoveryEmailForm = () => {
                   placeholder="Your recovery email"
                   {...field}
                   className={
-                    field.value === user?.recoveryDetails?.email
+                    field.value === account?.recoveryDetails?.email
                       ? 'font-medium'
                       : ''
                   }

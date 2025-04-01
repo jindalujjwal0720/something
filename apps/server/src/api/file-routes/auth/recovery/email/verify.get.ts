@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import { env } from '../../../../../config';
 import { NotFoundError, UnauthorizedError } from '../../../../../utils/errors';
-import User from '../../../../../models/user';
+import Account from '../../../../../models/account';
 import { verifyRecoveryEmailVerificationToken } from '../../../../../utils/auth';
 import { celebrate, Joi, Segments } from 'celebrate';
 
@@ -19,21 +19,19 @@ async function verifyAndUpdateRecoveryEmail(token: string): Promise<void> {
     );
   }
 
-  const existingUser = await User.findOne({ email: payload.email }).select(
+  const account = await Account.findOne({ email: payload.email }).select(
     '+recoveryDetails',
   );
-  if (!existingUser) {
-    throw new NotFoundError('User not found');
-  }
+  if (!account) throw new NotFoundError('Account not found');
 
-  existingUser.recoveryDetails = {
-    ...(existingUser.recoveryDetails || {
+  account.recoveryDetails = {
+    ...(account.recoveryDetails || {
       backupCodes: [],
     }),
     email: payload.recoveryEmail,
     emailVerified: true,
   };
-  await existingUser.save();
+  await account.save();
 }
 
 const verifyRecoveryEmailHandler: RequestHandler = async (req, res, next) => {

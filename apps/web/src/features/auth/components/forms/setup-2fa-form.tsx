@@ -32,17 +32,17 @@ const SetupTwoFactorAuthenticationForm = () => {
       password: '',
     },
   });
-  const { user } = useAuth();
+  const { account } = useAuth();
   const [enable2fa] = useEnable2FAMutation();
   const [disable2fa] = useDisable2FAMutation();
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
 
   const onSubmit = async (data: Setup2faFormValues) => {
     try {
-      if (user?.twoFactorAuth?.enabled) {
+      if (account?.twoFactorAuth?.enabled) {
         const payload = await disable2fa({
           password: data.password,
-          email: user?.email || '',
+          email: account?.email || '',
         }).unwrap();
         form.reset();
         toast.success(payload.message);
@@ -50,7 +50,7 @@ const SetupTwoFactorAuthenticationForm = () => {
       } else {
         const payload = await enable2fa({
           password: data.password,
-          email: user?.email || '',
+          email: account?.email || '',
         }).unwrap();
         form.reset();
         setRecoveryCodes(payload.recoveryCodes);
@@ -63,7 +63,7 @@ const SetupTwoFactorAuthenticationForm = () => {
 
   return (
     <>
-      {user?.twoFactorAuth?.enabled && (
+      {account?.twoFactorAuth?.enabled && (
         <p className="text-green-600 flex gap-2 text-sm items-center">
           <CheckCircledIcon />
           <span>Two-factor authentication is enabled.</span>
@@ -93,9 +93,11 @@ const SetupTwoFactorAuthenticationForm = () => {
           />
           <Button
             type="submit"
-            variant={user?.twoFactorAuth?.enabled ? 'destructive' : 'default'}
+            variant={
+              account?.twoFactorAuth?.enabled ? 'destructive' : 'default'
+            }
           >
-            {user?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'} two-factor
+            {account?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'} two-factor
             authentication
           </Button>
         </form>

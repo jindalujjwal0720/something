@@ -22,16 +22,16 @@ const accountFormSchema = z.object({
     message: 'Name must be at least 3 characters long',
   }),
   email: z.string().email().readonly(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().url().or(z.literal('')).optional(),
 });
 
 type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 const AccountForm = () => {
-  const { user } = useAuth();
+  const { user, account } = useAuth();
   const defaultValues: AccountFormValues = {
     name: user?.name || '',
-    email: user?.email || '',
+    email: account?.email || '',
     imageUrl: user?.imageUrl || '',
   };
   const form = useForm<AccountFormValues>({
@@ -43,7 +43,12 @@ const AccountForm = () => {
   const onSubmit = async (data: AccountFormValues) => {
     if (isLoading) return;
     try {
-      await updateMe({ user: data }).unwrap();
+      await updateMe({
+        user: {
+          name: data.name,
+          imageUrl: data.imageUrl,
+        },
+      }).unwrap();
       toast.success('Account updated successfully');
     } catch (err) {
       toast.error(getErrorMessage(err));

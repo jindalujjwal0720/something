@@ -1,6 +1,5 @@
 import { RequestHandler } from 'express';
-import { Setup2FAAuthenticatorDTO } from '../../../../../types/services/auth';
-import User from '../../../../../models/user';
+import Account from '../../../../../models/account';
 import {
   BadRequestError,
   NotFoundError,
@@ -21,37 +20,38 @@ const validatorMiddleware = celebrate({
   }),
 });
 
-async function regenerate2faTotp(
-  userDTO: Setup2FAAuthenticatorDTO,
-): Promise<{ otpAuthUrl: string }> {
-  const { email, password } = userDTO;
-  const existingUser = await User.findOne({ email }).select(
+async function regenerate2faTotp(creds: {
+  email: string;
+  password: string;
+}): Promise<{ otpAuthUrl: string }> {
+  const { email, password } = creds;
+  const account = await Account.findOne({ email }).select(
     '+twoFactorAuth +passwordHash',
   );
-  if (!existingUser) {
+  if (!account) {
     throw new NotFoundError('User not found');
   }
 
-  if (!existingUser.twoFactorAuth?.enabled) {
+  if (!account.twoFactorAuth?.enabled) {
     throw new BadRequestError('2FA not enabled for the user');
   }
 
   const passwordsMatch = await comparePasswords(
     password,
-    existingUser.passwordHash || '',
+    account.passwordHash || '',
   );
   if (!passwordsMatch) {
     throw new UnauthorizedError('Incorrect password');
   }
 
-  if (!existingUser.twoFactorAuth.totp.enabled) {
+  if (!account.twoFactorAuth.totp.enabled) {
     throw new BadRequestError('Authenticator not enabled for the user');
   }
 
   const secret = authenticator.generateSecret();
   const encodedSecret = await encrypt2FATOTPSecret(secret);
-  existingUser.twoFactorAuth.totp.secret = encodedSecret;
-  await existingUser.save();
+  account.twoFactorAuth.totp.secret = encodedSecret;
+  await account.save();
 
   // Generate QR code for the user
   const otpAuthUrl = authenticator.keyuri(email, meta.company.name, secret);
@@ -63,9 +63,9 @@ async function regenerate2faTotp(
 
 const regenerate2faTotpHandler: RequestHandler = async (req, res, next) => {
   try {
-    const user = req.body;
+    const creds = req.body;
 
-    const { otpAuthUrl } = await regenerate2faTotp(user);
+    const { otpAuthUrl } = await regenerate2faTotp(creds);
 
     res.status(200).json({ otpAuthUrl });
   } catch (err) {

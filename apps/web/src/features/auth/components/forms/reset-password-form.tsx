@@ -66,11 +66,10 @@ const ResetPasswordForm = ({ token, email }: ResetPasswordFormProps) => {
   const onSubmit = async (data: ResetPasswordFormValues) => {
     try {
       const payload = await resetPassword({
-        user: {
+        account: {
           email: email || '',
           currentPasswordOrToken: token,
           newPassword: data.newPassword,
-          confirmPassword: data.confirmPassword,
         },
       }).unwrap();
       toast.success(payload.message);

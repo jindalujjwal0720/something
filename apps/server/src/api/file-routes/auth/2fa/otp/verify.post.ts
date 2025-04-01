@@ -16,12 +16,8 @@ import {
   verify2FAToken,
 } from '../../../../../utils/auth';
 import { encryptCookieValue } from '../../../../../utils/cookie';
-import {
-  UserLoginConfig,
-  UserOTPLoginDTO,
-} from '../../../../../types/services/auth';
-import { IUser } from '../../../../../types/models/user';
-import User from '../../../../../models/user';
+import { SanitisedAccount } from '../../../../../types/models/account';
+import Account from '../../../../../models/account';
 import {
   BadRequestError,
   NotFoundError,
@@ -30,6 +26,7 @@ import {
 import { AuthenticationEvent } from '../../../../../events/auth/events';
 import { EventBus } from '../../../../../events/bus';
 import { celebrate, Joi, Segments } from 'celebrate';
+import User from '../../../../../models/user';
 
 const validatorMiddleware = celebrate({
   [Segments.BODY]: Joi.object().keys({
@@ -39,101 +36,102 @@ const validatorMiddleware = celebrate({
 });
 
 async function loginWithOtp(
-  userDTO: UserOTPLoginDTO,
-  config: UserLoginConfig,
+  otpVerificationData: { otp: string; token: string },
+  config: { deviceInfo: IDeviceInfo },
 ): Promise<{
-  user: IUser;
+  account: SanitisedAccount;
   accessToken: string;
   refreshToken: string;
 }> {
-  const { token } = userDTO;
+  const { token } = otpVerificationData;
   const twoFactorAuthPayload = await verify2FAToken(token);
 
-  const existingUser = await User.findOne({
+  const account = await Account.findOne({
     email: twoFactorAuthPayload.email,
   }).select('+twoFactorAuth +refreshTokens');
-  if (!existingUser) {
+  if (!account) {
     throw new NotFoundError('User not found');
   }
 
-  if (
-    !existingUser.twoFactorAuth?.enabled ||
-    !existingUser.twoFactorAuth.otp.enabled
-  ) {
+  if (!account.twoFactorAuth?.enabled || !account.twoFactorAuth.otp.enabled) {
     throw new BadRequestError('OTP based 2FA not enabled for this user');
   }
 
-  if (
-    !existingUser.twoFactorAuth.otp.hash ||
-    !existingUser.twoFactorAuth.otp.expires
-  ) {
+  if (!account.twoFactorAuth.otp.hash || !account.twoFactorAuth.otp.expires) {
     throw new BadRequestError('OTP not generated. Please request a new OTP');
   }
 
   const otpMatch = await comparePasswords(
-    userDTO.otp,
-    existingUser.twoFactorAuth.otp.hash || '',
+    otpVerificationData.otp,
+    account.twoFactorAuth.otp.hash || '',
   );
   if (!otpMatch) {
     throw new UnauthorizedError('Incorrect OTP');
   }
 
   if (
-    existingUser.twoFactorAuth.otp.expires &&
-    existingUser.twoFactorAuth.otp.expires < new Date()
+    account.twoFactorAuth.otp.expires &&
+    account.twoFactorAuth.otp.expires < new Date()
   ) {
-    existingUser.twoFactorAuth.otp.hash = undefined;
-    existingUser.twoFactorAuth.otp.expires = undefined;
-    await existingUser.save();
+    account.twoFactorAuth.otp.hash = undefined;
+    account.twoFactorAuth.otp.expires = undefined;
+    await account.save();
 
     throw new UnauthorizedError('OTP has expired');
   }
 
   // Filter expired refresh tokens
-  existingUser.refreshTokens = existingUser.refreshTokens?.filter(
+  account.refreshTokens = account.refreshTokens?.filter(
     (rt) => rt.expires > new Date(),
   );
   // Check if device already present
-  const existingRefreshToken = existingUser.refreshTokens?.find((rt) =>
+  const existingRefreshToken = account.refreshTokens?.find((rt) =>
     checkSameDevice(config.deviceInfo, rt),
   );
   if (existingRefreshToken) {
-    const payload = await generatePayload(existingUser, true);
+    const payload = await generatePayload(account, true);
     const accessToken = await generateAccessToken(payload);
     const encodedRefreshToken = Buffer.from(
       JSON.stringify(existingRefreshToken),
     ).toString('base64');
 
-    const userObject = excludeSensitiveFields(existingUser.toObject());
+    const sanitisedAccount = excludeSensitiveFields(account.toObject());
     return {
-      user: userObject,
+      account: sanitisedAccount,
       accessToken,
       refreshToken: encodedRefreshToken,
     };
   }
 
-  const payload = await generatePayload(existingUser, true);
+  const payload = await generatePayload(account, true);
   const accessToken = await generateAccessToken(payload);
   const refreshToken = await generateRefreshToken(payload, config.deviceInfo);
 
-  existingUser.refreshTokens?.push(refreshToken);
-  existingUser.twoFactorAuth.otp.hash = undefined;
-  existingUser.twoFactorAuth.otp.expires = undefined;
-  existingUser.isEmailVerified = true; // Email verified on OTP login
-  await existingUser.save();
+  account.refreshTokens?.push(refreshToken);
+  account.twoFactorAuth.otp.hash = undefined;
+  account.twoFactorAuth.otp.expires = undefined;
+  account.isEmailVerified = true; // Email verified on OTP login
+  await account.save();
 
-  const userObject = excludeSensitiveFields(existingUser.toObject());
+  const sanitisedAccount = excludeSensitiveFields(account.toObject());
+
+  const user = await User.findOne({ account: sanitisedAccount._id });
+  if (!user) throw new NotFoundError('User not found');
 
   // Publish events
   EventBus.auth.emit(AuthenticationEvent.LOGGED_IN, {
-    user: { name: userObject.name, email: userObject.email },
+    user: { name: user.name, email: sanitisedAccount.email },
     deviceInfo: config.deviceInfo,
   });
 
   const encodedRefreshToken = Buffer.from(
     JSON.stringify(refreshToken),
   ).toString('base64');
-  return { user: userObject, accessToken, refreshToken: encodedRefreshToken };
+  return {
+    account: sanitisedAccount,
+    accessToken,
+    refreshToken: encodedRefreshToken,
+  };
 }
 
 const verifyOtpAndLoginHandler: RequestHandler = async (req, res, next) => {
@@ -147,7 +145,7 @@ const verifyOtpAndLoginHandler: RequestHandler = async (req, res, next) => {
       source: useragent?.source || 'unknown',
     };
 
-    const { user, accessToken, refreshToken } = await loginWithOtp(
+    const { account, accessToken, refreshToken } = await loginWithOtp(
       { otp, token },
       { deviceInfo },
     );
@@ -182,7 +180,7 @@ const verifyOtpAndLoginHandler: RequestHandler = async (req, res, next) => {
         refreshToken,
         generateRefreshTokenCookieOptions(),
       )
-      .json({ user, token: accessToken });
+      .json({ account, token: accessToken });
   } catch (err) {
     next(err);
   }

@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 const Profile = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
-  const { user, isLoading: isUserLoading } = useAuth();
+  const { user, account, isLoading: isUserLoading } = useAuth();
   const currentUserRole = useSelector(selectRole);
   const [logout] = useLogoutMutation();
   const dispatch = useDispatch();
@@ -89,13 +89,15 @@ const Profile = () => {
                 </Avatar>
                 <div>
                   <h4 className="text-sm font-semibold">{user?.name}</h4>
-                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {account?.email}
+                  </p>
                 </div>
               </div>
               <div>
-                {user?.roles && user.roles.length > 1 && (
+                {account?.roles && account.roles.length > 1 && (
                   <div className="pt-4 space-y-4">
-                    {user?.roles
+                    {account?.roles
                       .filter((role) => role !== currentUserRole)
                       .map((role) => (
                         <div

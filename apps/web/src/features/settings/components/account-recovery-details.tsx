@@ -11,7 +11,7 @@ import { CheckCircledIcon } from '@radix-ui/react-icons';
 import { useNavigate } from 'react-router-dom';
 
 const AccountRecoveryDetails = () => {
-  const { user } = useAuth();
+  const { account } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -30,10 +30,10 @@ const AccountRecoveryDetails = () => {
               <h4 className="text-sm font-medium">Recovery email address</h4>
               <p className="text-sm text-muted-foreground flex gap-1 items-center">
                 <span>
-                  {user?.recoveryDetails?.email ||
+                  {account?.recoveryDetails?.email ||
                     'Add an email address to recover your account.'}
                 </span>
-                {user?.recoveryDetails?.emailVerified && (
+                {account?.recoveryDetails?.emailVerified && (
                   <CheckCircledIcon className="size-4 text-green-600" />
                 )}
               </p>
@@ -42,16 +42,17 @@ const AccountRecoveryDetails = () => {
               variant="ghost"
               onClick={() => navigate('/settings/security/recovery/email')}
             >
-              {user?.recoveryDetails?.email ? 'Change' : 'Add'} recovery email
+              {account?.recoveryDetails?.email ? 'Change' : 'Add'} recovery
+              email
             </Button>
           </div>
           <div className="flex pt-4 items-center justify-between gap-4">
             <div className="space-y-1">
               <h4 className="text-sm font-medium">Backup codes</h4>
               <p className="text-sm text-muted-foreground">
-                {typeof user?.recoveryDetails?.backupCodesUsedCount !==
+                {typeof account?.recoveryDetails?.backupCodesUsedCount !==
                 'undefined'
-                  ? `${user?.recoveryDetails?.backupCodesUsedCount} backup codes used`
+                  ? `${account?.recoveryDetails?.backupCodesUsedCount} backup codes used`
                   : 'Generate backup codes to recover your account.'}
               </p>
             </div>
@@ -59,7 +60,7 @@ const AccountRecoveryDetails = () => {
               variant="ghost"
               onClick={() => navigate('/settings/security/recovery/codes')}
             >
-              {typeof user?.recoveryDetails?.backupCodesUsedCount !==
+              {typeof account?.recoveryDetails?.backupCodesUsedCount !==
               'undefined'
                 ? 'Regenerate backup codes'
                 : 'Generate backup codes'}

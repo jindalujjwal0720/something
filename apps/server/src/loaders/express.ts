@@ -3,7 +3,6 @@ import cookieParser from 'cookie-parser';
 import { env } from '../config';
 import helmet from 'helmet';
 import compression from 'compression';
-import api from '../api';
 import { logger } from '../utils/logger';
 import * as useragent from 'express-useragent';
 import crypto from 'crypto';
@@ -78,8 +77,6 @@ const expressLoader = async ({ app }: { app: express.Application }) => {
     logger: false,
   });
   app.use('/api/v1', router);
-
-  app.use('/api/v1', api);
 };
 
 export default expressLoader;

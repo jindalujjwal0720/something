@@ -1,4 +1,5 @@
 export const getErrorMessage = (error: unknown): string => {
+  console.log('Error:', error);
   if (!error) {
     return 'An error occurred';
   }

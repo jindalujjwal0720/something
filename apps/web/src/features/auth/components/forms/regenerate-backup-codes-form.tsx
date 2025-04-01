@@ -35,14 +35,14 @@ const RegenerateBackupCodesForm = () => {
     },
   });
   const [regenerateBackupCodes] = useRegenerateRecoveryCodesMutation();
-  const { user } = useAuth();
+  const { account } = useAuth();
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
 
   const onSubmit = async (data: RegenerateBackupCodesFormValues) => {
     try {
       const payload = await regenerateBackupCodes({
         password: data.password,
-        email: user?.email || '',
+        email: account?.email || '',
       }).unwrap();
       form.reset();
       setRecoveryCodes(payload.recoveryCodes);
@@ -54,8 +54,8 @@ const RegenerateBackupCodesForm = () => {
   return (
     <>
       <p className="text-sm text-muted-foreground">
-        {user?.recoveryDetails?.backupCodesUsedCount} backup codes used so far.
-        (Out of 10)
+        {account?.recoveryDetails?.backupCodesUsedCount} backup codes used so
+        far. (Out of 10)
       </p>
       {recoveryCodes.length > 0 && (
         <RecoveryCodes recoveryCodes={recoveryCodes} />

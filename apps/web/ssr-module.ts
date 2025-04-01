@@ -81,7 +81,7 @@ export async function getViteMiddleware() {
 export async function ssrHandler(req: any, res: any, next: any) {
   try {
     // remove query params for page URL
-    const url = req.originalUrl.replace('/', '').split('?')[0];
+    const url = req.originalUrl.split('?')[0];
     const nonce = res.locals.cspNonce;
 
     let template: string;

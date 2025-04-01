@@ -15,12 +15,8 @@ import {
   verifyRecoveryEmailVerificationToken,
 } from '../../../../../utils/auth';
 import { encryptCookieValue } from '../../../../../utils/cookie';
-import {
-  UserLoginConfig,
-  UserRecoveryCodeLoginDTO,
-} from '../../../../../types/services/auth';
-import { IUser } from '../../../../../types/models/user';
-import User from '../../../../../models/user';
+import { IAccount } from '../../../../../types/models/account';
+import Account from '../../../../../models/account';
 import {
   BadRequestError,
   NotFoundError,
@@ -29,6 +25,8 @@ import {
 import { AuthenticationEvent } from '../../../../../events/auth/events';
 import { EventBus } from '../../../../../events/bus';
 import { celebrate, Joi, Segments } from 'celebrate';
+import { IDeviceInfo } from '../../../../../types/middlewares/user-agent';
+import User from '../../../../../models/user';
 
 const validatorMiddleware = celebrate({
   [Segments.BODY]: Joi.object().keys({
@@ -38,14 +36,14 @@ const validatorMiddleware = celebrate({
 });
 
 async function loginWithRecoveryCode(
-  userDTO: UserRecoveryCodeLoginDTO,
-  config: UserLoginConfig,
+  recoveryLoginData: { code: string; token: string },
+  config: { deviceInfo: IDeviceInfo },
 ): Promise<{
-  user: IUser;
+  account: IAccount;
   accessToken: string;
   refreshToken: string;
 }> {
-  const { token, code: recoveryCode } = userDTO;
+  const { token, code: recoveryCode } = recoveryLoginData;
   const payload = await verifyRecoveryEmailVerificationToken(token);
   if (!payload) {
     throw new UnauthorizedError(
@@ -53,16 +51,16 @@ async function loginWithRecoveryCode(
     );
   }
 
-  const existingUser = await User.findOne({ email: payload.email }).select(
+  const account = await Account.findOne({ email: payload.email }).select(
     '+recoveryDetails +refreshTokens',
   );
-  if (!existingUser) {
+  if (!account) {
     throw new NotFoundError('User not found');
   }
 
   if (
-    !existingUser.recoveryDetails?.backupCodes ||
-    existingUser.recoveryDetails?.backupCodes.length === 0
+    !account.recoveryDetails?.backupCodes ||
+    account.recoveryDetails?.backupCodes.length === 0
   ) {
     throw new BadRequestError(
       'No recovery codes found. Please generate new recovery codes',
@@ -70,40 +68,38 @@ async function loginWithRecoveryCode(
   }
 
   const decryptedBackupCodes = await Promise.all(
-    existingUser.recoveryDetails.backupCodes.map((bc) =>
-      decryptBackupCode(bc.code),
-    ),
+    account.recoveryDetails.backupCodes.map((bc) => decryptBackupCode(bc.code)),
   );
   const backupCodeIndex = decryptedBackupCodes.findIndex(
     (code) => code === recoveryCode,
   );
   if (
     backupCodeIndex === -1 ||
-    existingUser.recoveryDetails.backupCodes[backupCodeIndex].usedAt
+    account.recoveryDetails.backupCodes[backupCodeIndex].usedAt
   ) {
     throw new UnauthorizedError('Invalid or expired recovery code');
   }
 
   // mark the recovery code as used with a timestamp
-  existingUser.recoveryDetails.backupCodes[backupCodeIndex].usedAt = new Date();
+  account.recoveryDetails.backupCodes[backupCodeIndex].usedAt = new Date();
 
   // Filter expired refresh tokens
-  existingUser.refreshTokens =
-    existingUser.refreshTokens?.filter((rt) => rt.expires > new Date()) || [];
+  account.refreshTokens =
+    account.refreshTokens?.filter((rt) => rt.expires > new Date()) || [];
   // Check if device already present
-  const existingRefreshToken = existingUser.refreshTokens?.find((rt) =>
+  const existingRefreshToken = account.refreshTokens?.find((rt) =>
     checkSameDevice(config.deviceInfo, rt),
   );
   if (existingRefreshToken) {
-    const payload = await generatePayload(existingUser, true);
+    const payload = await generatePayload(account, true);
     const accessToken = await generateAccessToken(payload);
     const encodedRefreshToken = Buffer.from(
       JSON.stringify(existingRefreshToken),
     ).toString('base64');
 
-    const userObject = excludeSensitiveFields(existingUser.toObject());
+    const sanitisedAccount = excludeSensitiveFields(account.toObject());
     return {
-      user: userObject,
+      account: sanitisedAccount,
       accessToken,
       refreshToken: encodedRefreshToken,
     };
@@ -114,14 +110,17 @@ async function loginWithRecoveryCode(
     config.deviceInfo,
   );
 
-  existingUser.refreshTokens.push(newRefreshToken);
-  await existingUser.save();
+  account.refreshTokens.push(newRefreshToken);
+  await account.save();
 
-  const userObject = excludeSensitiveFields(existingUser.toObject());
+  const sanitisedAccount = excludeSensitiveFields(account.toObject());
+
+  const user = await User.findOne({ account: sanitisedAccount._id });
+  if (!user) throw new NotFoundError('User not found');
 
   // Publish events
   EventBus.auth.emit(AuthenticationEvent.LOGGED_IN, {
-    user: { name: userObject.name, email: userObject.email },
+    user: { name: user.name, email: sanitisedAccount.email },
     deviceInfo: config.deviceInfo,
   });
 
@@ -129,7 +128,7 @@ async function loginWithRecoveryCode(
     JSON.stringify(newRefreshToken),
   ).toString('base64');
   return {
-    user: userObject,
+    account: sanitisedAccount,
     accessToken: '',
     refreshToken: encodedRefreshToken,
   };
@@ -144,7 +143,7 @@ const verifyRecoveryCodeAndLoginHandler: RequestHandler = async (
     const { code: recoveryCode, token } = req.body;
     const { deviceInfo } = res.locals;
 
-    const { user, accessToken, refreshToken } = await loginWithRecoveryCode(
+    const { account, accessToken, refreshToken } = await loginWithRecoveryCode(
       { code: recoveryCode, token },
       { deviceInfo },
     );
@@ -179,7 +178,7 @@ const verifyRecoveryCodeAndLoginHandler: RequestHandler = async (
         refreshToken,
         generateRefreshTokenCookieOptions(),
       )
-      .json({ user, token: accessToken });
+      .json({ account, token: accessToken });
   } catch (err) {
     next(err);
   }

@@ -7,7 +7,7 @@ import {
   UnauthorizedError,
 } from '../../../utils/errors';
 import { EventBus } from '../../../events/bus';
-import User from '../../../models/user';
+import Account from '../../../models/account';
 import {
   checkSameDevice,
   comparePasswords,
@@ -25,17 +25,14 @@ import {
 import { AuthenticationEvent } from '../../../events/auth/events';
 import { env } from '../../../config';
 import { IDeviceInfo } from '../../../types/middlewares/user-agent';
-import {
-  UserLoginConfig,
-  UserLoginDTO,
-  UserLoginResponse,
-} from '../../../types/services/auth';
 import { encryptCookieValue } from '../../../utils/cookie';
 import { celebrate, Segments } from 'celebrate';
+import User from '../../../models/user';
+import { SanitisedAccount } from '../../../types/models/account';
 
 const validatorMiddleware = celebrate({
   [Segments.BODY]: Joi.object().keys({
-    user: Joi.object().keys({
+    account: Joi.object().keys({
       email: Joi.string().email().required(),
       password: Joi.string().required(),
     }),
@@ -43,45 +40,53 @@ const validatorMiddleware = celebrate({
 });
 
 async function loginWithEmailAndPassword(
-  userDTO: UserLoginDTO,
-  config: UserLoginConfig,
-): Promise<UserLoginResponse> {
-  const existingUser = await User.findOne({ email: userDTO.email }).select(
-    '+passwordHash +refreshTokens +twoFactorAuth',
-  );
-  if (!existingUser) {
-    throw new NotFoundError('User not found');
+  accountInfo: { email: string; password: string },
+  config: { deviceInfo: IDeviceInfo },
+): Promise<
+  | {
+      account: SanitisedAccount;
+      accessToken: string;
+      refreshToken: string;
+    }
+  | { requires2FA: boolean; token: string }
+> {
+  const account = await Account.findOne({
+    email: accountInfo.email,
+  }).select('+passwordHash +refreshTokens +twoFactorAuth');
+  if (!account) {
+    throw new NotFoundError('Invalid email or password');
   }
 
   const passwordsMatch = await comparePasswords(
-    userDTO.password,
-    existingUser.passwordHash || '',
+    accountInfo.password,
+    account.passwordHash || '',
   );
   if (!passwordsMatch) {
     throw new UnauthorizedError('Invalid email or password');
   }
 
-  if (!existingUser.isEmailVerified) {
+  if (!account.isEmailVerified) {
     throw new BadRequestError('Email not verified. Please verify your email');
   }
 
   // Filter expired refresh tokens
-  existingUser.refreshTokens =
-    existingUser.refreshTokens?.filter((rt) => rt.expires > new Date()) || [];
+  account.refreshTokens =
+    account.refreshTokens?.filter((rt) => rt.expires > new Date()) || [];
   // Check if device already present
-  const existingRefreshToken = existingUser.refreshTokens?.find((rt) =>
+  const existingRefreshToken = account.refreshTokens?.find((rt) =>
     checkSameDevice(config.deviceInfo, rt),
   );
   if (existingRefreshToken) {
-    const payload = await generatePayload(existingUser);
+    const payload = await generatePayload(account);
     const accessToken = await generateAccessToken(payload);
     const encodedRefreshToken = Buffer.from(
       JSON.stringify(existingRefreshToken),
     ).toString('base64');
 
-    const userObject = excludeSensitiveFields(existingUser.toObject());
+    const sanitisedAccount = excludeSensitiveFields(account.toObject());
+
     return {
-      user: userObject,
+      account: sanitisedAccount,
       accessToken,
       refreshToken: encodedRefreshToken,
     };
@@ -89,36 +94,45 @@ async function loginWithEmailAndPassword(
 
   // if 2FA is enabled
   // send a short access token to be used for getting user's details
-  if (existingUser.twoFactorAuth?.enabled) {
-    const payload = await generatePayload(existingUser);
+  if (account.twoFactorAuth?.enabled) {
+    const payload = await generatePayload(account);
     const token = await generate2FAAccessToken(payload);
     return { requires2FA: true, token };
   }
 
-  const payload = await generatePayload(existingUser);
+  const payload = await generatePayload(account);
   const accessToken = await generateAccessToken(payload);
   const refreshToken = await generateRefreshToken(payload, config.deviceInfo);
 
-  existingUser.refreshTokens?.push(refreshToken);
-  await existingUser.save();
+  account.refreshTokens?.push(refreshToken);
+  await account.save();
 
-  const userObject = excludeSensitiveFields(existingUser.toObject());
+  const sanitisedAccount = excludeSensitiveFields(account.toObject());
+
+  const user = await User.findOne({ account: sanitisedAccount._id });
+  if (!user) {
+    throw new NotFoundError('User not found');
+  }
 
   // Publish events
   EventBus.auth.emit(AuthenticationEvent.LOGGED_IN, {
-    user: { name: userObject.name, email: userObject.email },
+    user: { name: user.name, email: sanitisedAccount.email },
     deviceInfo: config.deviceInfo,
   });
 
   const encodedRefreshToken = Buffer.from(
     JSON.stringify(refreshToken),
   ).toString('base64');
-  return { user: userObject, accessToken, refreshToken: encodedRefreshToken };
+  return {
+    account: sanitisedAccount,
+    accessToken,
+    refreshToken: encodedRefreshToken,
+  };
 }
 
 const loginHandler: RequestHandler = async (req, res, next) => {
   try {
-    const { user: userData } = req.body;
+    const { account } = req.body;
 
     const { useragent } = res.locals;
     const deviceInfo: IDeviceInfo = {
@@ -128,7 +142,7 @@ const loginHandler: RequestHandler = async (req, res, next) => {
       source: useragent?.source || 'unknown',
     };
 
-    const response = await loginWithEmailAndPassword(userData, { deviceInfo });
+    const response = await loginWithEmailAndPassword(account, { deviceInfo });
 
     if ('requires2FA' in response) {
       const { requires2FA, token } = response;
@@ -138,7 +152,7 @@ const loginHandler: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const { user, accessToken, refreshToken } = response;
+    const { accessToken, refreshToken } = response;
     const {
       [env.auth.accountChooserCookieName]: existingAccountChooserCookie,
     } = req.cookies;
@@ -170,7 +184,7 @@ const loginHandler: RequestHandler = async (req, res, next) => {
         refreshToken,
         generateRefreshTokenCookieOptions(),
       )
-      .json({ user, token: accessToken });
+      .json({ token: accessToken });
   } catch (err) {
     next(err);
   }

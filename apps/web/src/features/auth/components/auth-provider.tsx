@@ -1,18 +1,23 @@
 import { createContext, PropsWithChildren, useContext, useMemo } from 'react';
 import { useGetMeQuery } from '../api/auth';
 import { IUser } from '@/types/models/user';
+import { SanitisedAccount } from '@/types/models/account';
 
 interface AuthContextValue {
   user: IUser | undefined;
+  account: SanitisedAccount | undefined;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-  const { data: { user } = {}, isLoading } = useGetMeQuery();
+  const { data: { user, account } = {}, isLoading } = useGetMeQuery();
 
-  const value = useMemo(() => ({ user, isLoading }), [user, isLoading]);
+  const value = useMemo(
+    () => ({ user, account, isLoading }),
+    [user, account, isLoading],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

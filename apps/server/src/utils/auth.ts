@@ -1,7 +1,11 @@
 import * as e from 'express';
 import bcrypt from 'bcrypt';
 import { AccountChooser, TokenPayload } from '../types/services/auth';
-import { IRefreshToken, IUser } from '../types/models/user';
+import {
+  IRefreshToken,
+  IAccount,
+  SanitisedAccount,
+} from '../types/models/account';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { env } from '../config';
@@ -21,14 +25,13 @@ export async function comparePasswords(
 }
 
 export async function generatePayload(
-  user: IUser,
+  account: IAccount,
   mfaVerified = false,
 ): Promise<TokenPayload> {
   return {
-    email: user.email,
-    name: user.name,
-    imageUrl: user.imageUrl,
-    roles: user.roles,
+    accountId: account._id.toString(),
+    email: account.email,
+    roles: account.roles,
     mfaVerified: mfaVerified,
   };
 }
@@ -38,30 +41,30 @@ export function generateEmailVerificationToken(payload: TokenPayload): string {
   return crypto.createHash('sha256').update(uniquePayloadString).digest('hex');
 }
 
-export function excludeSensitiveFields(user: IUser): IUser {
+export function excludeSensitiveFields(account: IAccount): SanitisedAccount {
   // Sensitive fields
-  delete user.passwordHash;
-  delete user.emailVerificationToken;
-  delete user.emailVerificationTokenExpires;
-  delete user.resetPasswordToken;
-  delete user.resetPasswordTokenExpires;
-  delete user.refreshTokens;
+  delete account.passwordHash;
+  delete account.emailVerificationToken;
+  delete account.emailVerificationTokenExpires;
+  delete account.resetPasswordToken;
+  delete account.resetPasswordTokenExpires;
+  delete account.refreshTokens;
 
   // 2FA sensitive fields
-  if (user.twoFactorAuth?.otp) {
-    user.twoFactorAuth.otp.hash = undefined;
-    user.twoFactorAuth.otp.expires = undefined;
+  if (account.twoFactorAuth?.otp) {
+    account.twoFactorAuth.otp.hash = undefined;
+    account.twoFactorAuth.otp.expires = undefined;
   }
-  if (user.twoFactorAuth?.totp) {
-    user.twoFactorAuth.totp.secret = undefined;
+  if (account.twoFactorAuth?.totp) {
+    account.twoFactorAuth.totp.secret = undefined;
   }
   // Recovery details
-  if (user.recoveryDetails) {
-    user.recoveryDetails.backupCodesUsedCount =
-      user.recoveryDetails.backupCodes.filter((code) => code.usedAt).length;
-    user.recoveryDetails.backupCodes = [];
+  if (account.recoveryDetails) {
+    account.recoveryDetails.backupCodesUsedCount =
+      account.recoveryDetails.backupCodes.filter((code) => code.usedAt).length;
+    account.recoveryDetails.backupCodes = [];
   }
-  return user;
+  return account as SanitisedAccount;
 }
 
 export async function generate2FAAccessToken(

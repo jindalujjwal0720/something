@@ -1,16 +1,11 @@
 import { RequestHandler } from 'express';
-import { extractDeviceInfo } from '../../../../middlewares/user-agent';
-import User from '../../../../../models/user';
+import Account from '../../../../../models/account';
 import {
   BadRequestError,
   NotFoundError,
   UnauthorizedError,
 } from '../../../../../utils/errors';
 import { comparePasswords } from '../../../../../utils/auth';
-import {
-  Disable2FAConfig,
-  Disable2FADTO,
-} from '../../../../../types/services/auth';
 import { celebrate, Joi, Segments } from 'celebrate';
 
 const validatorMiddleware = celebrate({
@@ -20,50 +15,44 @@ const validatorMiddleware = celebrate({
   }),
 });
 
-async function disable2faTotp(
-  userDTO: Disable2FADTO,
-  _config: Disable2FAConfig,
-): Promise<void> {
-  const { email, password } = userDTO;
-  const existingUser = await User.findOne({ email }).select(
+async function disable2faTotp(creds: {
+  email: string;
+  password: string;
+}): Promise<void> {
+  const { email, password } = creds;
+  const account = await Account.findOne({ email }).select(
     '+twoFactorAuth +passwordHash',
   );
-  if (!existingUser) {
-    throw new NotFoundError('User not found');
-  }
+  if (!account) throw new NotFoundError('Account not found');
 
-  if (!existingUser.twoFactorAuth?.enabled) {
+  if (!account.twoFactorAuth?.enabled) {
     throw new BadRequestError('2FA not enabled for the user');
   }
 
-  if (!existingUser.twoFactorAuth.totp.enabled) {
+  if (!account.twoFactorAuth.totp.enabled) {
     throw new BadRequestError('Authenticator not enabled for the user');
   }
 
   const passwordsMatch = await comparePasswords(
     password,
-    existingUser.passwordHash || '',
+    account.passwordHash || '',
   );
   if (!passwordsMatch) {
     throw new UnauthorizedError('Incorrect password');
   }
 
-  existingUser.twoFactorAuth.totp.secret = undefined;
-  existingUser.twoFactorAuth.totp.enabled = false;
-  await existingUser.save();
+  account.twoFactorAuth.totp.secret = undefined;
+  account.twoFactorAuth.totp.enabled = false;
+  await account.save();
 
   // Publish events
 }
 
 const disable2faTotpHandler: RequestHandler = async (req, res, next) => {
   try {
-    const user = req.body;
-    const { deviceInfo, ipInfo } = res.locals;
+    const creds = req.body;
 
-    await disable2faTotp(user, {
-      deviceInfo,
-      ipInfo,
-    });
+    await disable2faTotp(creds);
 
     res
       .status(200)
@@ -73,4 +62,4 @@ const disable2faTotpHandler: RequestHandler = async (req, res, next) => {
   }
 };
 
-export default [validatorMiddleware, extractDeviceInfo, disable2faTotpHandler];
+export default [validatorMiddleware, disable2faTotpHandler];

@@ -15,21 +15,19 @@ import {
   verify2FAToken,
 } from '../../../../../utils/auth';
 import { encryptCookieValue } from '../../../../../utils/cookie';
-import {
-  UserLoginConfig,
-  UserOTPLoginDTO,
-} from '../../../../../types/services/auth';
-import { IUser } from '../../../../../types/models/user';
+import { SanitisedAccount } from '../../../../../types/models/account';
 import {
   BadRequestError,
   NotFoundError,
   UnauthorizedError,
 } from '../../../../../utils/errors';
-import User from '../../../../../models/user';
+import Account from '../../../../../models/account';
 import { authenticator } from 'otplib';
 import { AuthenticationEvent } from '../../../../../events/auth/events';
 import { EventBus } from '../../../../../events/bus';
 import { celebrate, Joi, Segments } from 'celebrate';
+import { IDeviceInfo } from '../../../../../types/middlewares/user-agent';
+import User from '../../../../../models/user';
 
 const validatorMiddleware = celebrate({
   [Segments.BODY]: Joi.object().keys({
@@ -39,89 +37,92 @@ const validatorMiddleware = celebrate({
 });
 
 async function loginWithTotp(
-  userDTO: UserOTPLoginDTO,
-  config: UserLoginConfig,
+  otpVerificationData: { otp: string; token: string },
+  config: { deviceInfo: IDeviceInfo },
 ): Promise<{
-  user: IUser;
+  account: SanitisedAccount;
   accessToken: string;
   refreshToken: string;
 }> {
-  const { token, otp } = userDTO;
+  const { token, otp } = otpVerificationData;
   const twoFactorAuthPayload = await verify2FAToken(token);
 
-  const existingUser = await User.findOne({
+  const account = await Account.findOne({
     email: twoFactorAuthPayload.email,
   }).select('+twoFactorAuth +refreshTokens');
-  if (!existingUser) {
+  if (!account) {
     throw new NotFoundError('User not found');
   }
 
-  if (
-    !existingUser.twoFactorAuth?.enabled ||
-    !existingUser.twoFactorAuth.totp.enabled
-  ) {
+  if (!account.twoFactorAuth?.enabled || !account.twoFactorAuth.totp.enabled) {
     throw new BadRequestError(
       'Authenticator based 2FA not enabled for this user',
     );
   }
 
   if (
-    !existingUser.twoFactorAuth.totp.secret ||
-    !existingUser.twoFactorAuth.totp.enabled
+    !account.twoFactorAuth.totp.secret ||
+    !account.twoFactorAuth.totp.enabled
   ) {
     throw new BadRequestError(
       'Authenticator not enabled. Please setup the authenticator first.',
     );
   }
 
-  const secret = await decrypt2FATOTPSecret(
-    existingUser.twoFactorAuth.totp.secret,
-  );
+  const secret = await decrypt2FATOTPSecret(account.twoFactorAuth.totp.secret);
   const otpMatch = authenticator.verify({ token: otp, secret });
   if (!otpMatch) {
     throw new UnauthorizedError('Incorrect OTP');
   }
 
   // Filter expired refresh tokens
-  existingUser.refreshTokens =
-    existingUser.refreshTokens?.filter((rt) => rt.expires > new Date()) || [];
+  account.refreshTokens =
+    account.refreshTokens?.filter((rt) => rt.expires > new Date()) || [];
   // Check if device already present
-  const existingRefreshToken = existingUser.refreshTokens?.find((rt) =>
+  const existingRefreshToken = account.refreshTokens?.find((rt) =>
     checkSameDevice(config.deviceInfo, rt),
   );
   if (existingRefreshToken) {
-    const payload = await generatePayload(existingUser, true);
+    const payload = await generatePayload(account, true);
     const accessToken = await generateAccessToken(payload);
     const encodedRefreshToken = Buffer.from(
       JSON.stringify(existingRefreshToken),
     ).toString('base64');
-    const userObject = excludeSensitiveFields(existingUser.toObject());
+    const sanitisedAccount = excludeSensitiveFields(account.toObject());
+
     return {
-      user: userObject,
+      account: sanitisedAccount,
       accessToken,
       refreshToken: encodedRefreshToken,
     };
   }
 
-  const payload = await generatePayload(existingUser, true);
+  const payload = await generatePayload(account, true);
   const accessToken = await generateAccessToken(payload);
   const refreshToken = await generateRefreshToken(payload, config.deviceInfo);
 
-  existingUser.refreshTokens.push(refreshToken);
-  existingUser.save();
+  account.refreshTokens.push(refreshToken);
+  account.save();
 
-  const userObject = excludeSensitiveFields(existingUser.toObject());
+  const sanitisedAccount = excludeSensitiveFields(account.toObject());
+
+  const user = await User.findOne({ account: sanitisedAccount._id });
+  if (!user) throw new NotFoundError('User not found');
 
   // Publish events
   EventBus.auth.emit(AuthenticationEvent.LOGGED_IN, {
-    user: { name: userObject.name, email: userObject.email },
+    user: { name: user.name, email: sanitisedAccount.email },
     deviceInfo: config.deviceInfo,
   });
 
   const encodedRefreshToken = Buffer.from(
     JSON.stringify(refreshToken),
   ).toString('base64');
-  return { user: userObject, accessToken, refreshToken: encodedRefreshToken };
+  return {
+    account: sanitisedAccount,
+    accessToken,
+    refreshToken: encodedRefreshToken,
+  };
 }
 
 const verifyTotpAndLoginHandler: RequestHandler = async (req, res, next) => {
@@ -129,7 +130,7 @@ const verifyTotpAndLoginHandler: RequestHandler = async (req, res, next) => {
     const { otp, token } = req.body;
     const { deviceInfo } = res.locals;
 
-    const { user, accessToken, refreshToken } = await loginWithTotp(
+    const { account, accessToken, refreshToken } = await loginWithTotp(
       { otp, token },
       { deviceInfo },
     );
@@ -164,7 +165,7 @@ const verifyTotpAndLoginHandler: RequestHandler = async (req, res, next) => {
         refreshToken,
         generateRefreshTokenCookieOptions(),
       )
-      .json({ user, token: accessToken });
+      .json({ account, token: accessToken });
   } catch (err) {
     next(err);
   }

@@ -59,17 +59,16 @@ const ChangePasswordForm = ({ onSuccess }: ChangePasswordFormProps) => {
       confirmPassword: '',
     },
   });
-  const { user } = useAuth();
+  const { account } = useAuth();
   const [resetPassword] = useResetPasswordMutation();
 
   const onSubmit = async (data: ChangePasswordFormValues) => {
     try {
       const payload = await resetPassword({
-        user: {
-          email: user?.email || '',
+        account: {
+          email: account?.email || '',
           currentPasswordOrToken: data.currentPassword,
           newPassword: data.newPassword,
-          confirmPassword: data.confirmPassword,
         },
       }).unwrap();
       toast.success(payload.message);

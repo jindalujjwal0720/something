@@ -10,24 +10,24 @@ import {
 } from '../../../utils/auth';
 import { encryptCookieValue } from '../../../utils/cookie';
 import { env } from '../../../config';
-import User from '../../../models/user';
+import Account from '../../../models/account';
 
 async function logout(refreshToken: string): Promise<void> {
   const decodedRefreshToken = JSON.parse(
     Buffer.from(refreshToken, 'base64').toString('utf-8'),
   );
-  const existingUser = await User.findOne({
+  const account = await Account.findOne({
     refreshTokens: { $elemMatch: { token: decodedRefreshToken.token } },
   });
-  if (!existingUser) {
+  if (!account) {
     // return silently if token not found
     return;
   }
 
-  existingUser.refreshTokens = existingUser.refreshTokens?.filter(
+  account.refreshTokens = account.refreshTokens?.filter(
     (rt) => rt.token !== decodedRefreshToken.token,
   );
-  await existingUser.save();
+  await account.save();
 }
 
 const logoutHandler: RequestHandler = async (req, res, next) => {

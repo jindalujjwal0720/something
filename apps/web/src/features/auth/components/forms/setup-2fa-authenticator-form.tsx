@@ -37,7 +37,7 @@ const Setup2faAuthenticatorForm = () => {
       password: '',
     },
   });
-  const { user } = useAuth();
+  const { account } = useAuth();
   const [enableTotp, { isLoading }] = useEnable2faTotpMutation();
   const [regenerateTotp, { isLoading: isRegeneratingTotp }] =
     useRegenerate2faTotpMutation();
@@ -47,15 +47,15 @@ const Setup2faAuthenticatorForm = () => {
     if (isLoading) return;
     try {
       const data = form.getValues();
-      if (user?.twoFactorAuth?.totp.enabled) {
+      if (account?.twoFactorAuth?.totp.enabled) {
         const response = await regenerateTotp({
-          email: user?.email || '',
+          email: account?.email || '',
           password: data.password,
         }).unwrap();
         setOtpAuthUrl(response.otpAuthUrl);
       } else {
         const response = await enableTotp({
-          email: user?.email || '',
+          email: account?.email || '',
           password: data.password,
         }).unwrap();
         setOtpAuthUrl(response.otpAuthUrl);
@@ -105,7 +105,7 @@ const Setup2faAuthenticatorForm = () => {
           )}
         />
         <Button type="submit" disabled={isLoading || isRegeneratingTotp}>
-          {user?.twoFactorAuth?.totp.enabled
+          {account?.twoFactorAuth?.totp.enabled
             ? 'Re-generate QR code'
             : 'Generate QR code'}
         </Button>

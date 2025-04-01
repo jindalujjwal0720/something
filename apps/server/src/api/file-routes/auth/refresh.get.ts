@@ -10,35 +10,35 @@ import {
   getAccountChooserCookieValue,
 } from '../../../utils/auth';
 import { UnauthorizedError } from '../../../utils/errors';
-import { UserRefreshTokensConfig } from '../../../types/services/auth';
-import User from '../../../models/user';
-import { IUser } from '../../../types/models/user';
+import Account from '../../../models/account';
+import { IAccount } from '../../../types/models/account';
 // import { AuthenticationEvent } from '../../../events/auth/events';
 // import { EventBus } from '../../../events/bus';
 import { extractIpInfo } from '../../middlewares/user-agent';
+import { IDeviceInfo } from '../../../types/middlewares/user-agent';
 
 async function refreshTokens(
   refreshToken: string,
-  { deviceInfo, ipInfo: _ }: UserRefreshTokensConfig,
-): Promise<{ user: IUser; accessToken: string; refreshToken: string }> {
+  { deviceInfo }: { deviceInfo: IDeviceInfo },
+): Promise<{ account: IAccount; accessToken: string; refreshToken: string }> {
   const decodedRefreshToken = JSON.parse(
     Buffer.from(refreshToken, 'base64').toString('utf-8'),
   );
-  const existingUser = await User.findOne({
+  const account = await Account.findOne({
     refreshTokens: { $elemMatch: { token: decodedRefreshToken.token } },
   }).select('+refreshTokens');
-  if (!existingUser) {
+  if (!account) {
     throw new UnauthorizedError('Invalid refresh token');
   }
 
-  const refreshTokenIndex = existingUser.refreshTokens?.findIndex(
+  const refreshTokenIndex = account.refreshTokens?.findIndex(
     (rt) => rt.token === decodedRefreshToken.token,
   );
   if (refreshTokenIndex === undefined || refreshTokenIndex === -1) {
     throw new UnauthorizedError('Invalid refresh token');
   }
 
-  const refreshTokenObject = existingUser.refreshTokens?.[refreshTokenIndex];
+  const refreshTokenObject = account.refreshTokens?.[refreshTokenIndex];
   if (!refreshTokenObject || refreshTokenObject.expires < new Date()) {
     throw new UnauthorizedError('Refresh token expired');
   }
@@ -62,20 +62,24 @@ async function refreshTokens(
   //   );
   // }
 
-  const payload = await generatePayload(existingUser);
+  const payload = await generatePayload(account);
   const accessToken = await generateAccessToken(payload);
   const newRefreshToken = await generateRefreshToken(payload, deviceInfo);
 
-  existingUser.refreshTokens?.splice(refreshTokenIndex, 1);
-  existingUser.refreshTokens?.push(newRefreshToken);
-  await existingUser.save();
+  account.refreshTokens?.splice(refreshTokenIndex, 1);
+  account.refreshTokens?.push(newRefreshToken);
+  await account.save();
 
-  const userObject = excludeSensitiveFields(existingUser.toObject());
+  const sanitisedAccount = excludeSensitiveFields(account.toObject());
 
   const encodedRefreshToken = Buffer.from(
     JSON.stringify(newRefreshToken),
   ).toString('base64');
-  return { user: userObject, accessToken, refreshToken: encodedRefreshToken };
+  return {
+    account: sanitisedAccount,
+    accessToken,
+    refreshToken: encodedRefreshToken,
+  };
 }
 
 const refreshHandler: RequestHandler = async (req, res, next) => {
@@ -90,15 +94,12 @@ const refreshHandler: RequestHandler = async (req, res, next) => {
     if (!refreshToken) {
       throw new UnauthorizedError('Refresh token is missing');
     }
-    const { deviceInfo, ipInfo } = res.locals;
+    const { deviceInfo } = res.locals;
     const {
-      user,
+      account,
       accessToken,
       refreshToken: newRefreshToken,
-    } = await refreshTokens(refreshToken, {
-      deviceInfo,
-      ipInfo,
-    });
+    } = await refreshTokens(refreshToken, { deviceInfo });
 
     res
       .status(200)
@@ -107,7 +108,7 @@ const refreshHandler: RequestHandler = async (req, res, next) => {
         newRefreshToken,
         generateRefreshTokenCookieOptions(),
       )
-      .json({ user, token: accessToken });
+      .json({ account, token: accessToken });
   } catch (err) {
     next(err);
   }

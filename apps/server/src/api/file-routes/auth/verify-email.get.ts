@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import { env } from '../../../config';
-import User from '../../../models/user';
+import Account from '../../../models/account';
 import { BadRequestError, NotFoundError } from '../../../utils/errors';
 import { celebrate, Joi, Segments } from 'celebrate';
 
@@ -11,27 +11,27 @@ const validatorMiddleware = celebrate({
 });
 
 async function verifyEmail(token: string): Promise<void> {
-  const existingUser = await User.findOne({
+  const account = await Account.findOne({
     emailVerificationToken: token,
   }).select('+emailVerificationToken +emailVerificationTokenExpires');
 
-  if (!existingUser) {
+  if (!account) {
     throw new NotFoundError('Invalid or expired email verification token');
   }
 
   if (
-    !existingUser.emailVerificationTokenExpires ||
-    existingUser.emailVerificationTokenExpires < new Date()
+    !account.emailVerificationTokenExpires ||
+    account.emailVerificationTokenExpires < new Date()
   ) {
     throw new BadRequestError(
       'Email verification token expired. Please request a new one by logging in.',
     );
   }
 
-  existingUser.emailVerificationToken = undefined;
-  existingUser.emailVerificationTokenExpires = undefined;
-  existingUser.isEmailVerified = true;
-  await existingUser.save();
+  account.emailVerificationToken = undefined;
+  account.emailVerificationTokenExpires = undefined;
+  account.isEmailVerified = true;
+  await account.save();
 }
 
 const verifyEmailHandler: RequestHandler = async (req, res, next) => {

@@ -179,7 +179,7 @@ function FeatureCard({
       </CardHeader>
       {features.length > 0 && (
         <CardContent>
-          <ul className="space-y-2 text-muted-foreground">
+          <ul className="flex flex-col gap-2 text-muted-foreground">
             {features.map((feature, index) => (
               <li key={index} className="flex text-sm">
                 <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-green-500 mr-2" />

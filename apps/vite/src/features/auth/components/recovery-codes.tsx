@@ -21,8 +21,8 @@ const RecoveryCodes = ({ recoveryCodes }: { recoveryCodes: string[] }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
         <h3 className="font-medium">Recovery codes</h3>
         <p className="text-sm text-muted-foreground">
           <span className="font-semibold">
@@ -38,7 +38,7 @@ const RecoveryCodes = ({ recoveryCodes }: { recoveryCodes: string[] }) => {
         {recoveryCodes.map((code, index) => (
           <li
             key={index}
-            className="bg-gray-100 py-2 px-4 rounded-md text-center space-x-2"
+            className="bg-gray-100 py-2 px-4 rounded-md text-center gap-2"
           >
             <span>{code.substring(0, 4)}</span>
             <span>{code.substring(4)}</span>

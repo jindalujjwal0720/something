@@ -40,7 +40,10 @@ const PreferencesForm = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-8"
+      >
         <FormField
           control={form.control}
           name="font"
@@ -76,7 +79,7 @@ const PreferencesForm = () => {
           control={form.control}
           name="theme"
           render={({ field }) => (
-            <FormItem className="space-y-1">
+            <FormItem className="flex flex-col gap-1">
               <FormLabel>Theme</FormLabel>
               <FormDescription>
                 Select the theme for the dashboard.
@@ -123,7 +126,9 @@ const PreferencesForm = () => {
             </FormItem>
           )}
         />
-        <Button type="submit">Update preferences</Button>
+        <div className="flex gap-4">
+          <Button type="submit">Update preferences</Button>
+        </div>
       </form>
     </Form>
   );
@@ -139,16 +144,21 @@ type ThemePreviewProps = {
 const ThemePreview = ({ base, card, muted, accent }: ThemePreviewProps) => {
   return (
     <div className="items-center rounded-md p-1 border-2 border-transparent hover:border-accent">
-      <div className={cn('space-y-2 rounded-sm p-2 bg-[#ecedef]', base)}>
+      <div
+        className={cn('flex flex-col gap-2 rounded-sm p-2 bg-[#ecedef]', base)}
+      >
         <div
-          className={cn('space-y-2 rounded-md p-2 shadow-sm bg-white', card)}
+          className={cn(
+            'flex flex-col gap-2 rounded-md p-2 shadow-sm bg-white',
+            card,
+          )}
         >
           <div className={cn('h-2 w-[80px] rounded-lg bg-[#ecedef]', muted)} />
           <div className={cn('h-2 w-[100px] rounded-lg bg-[#ecedef]', muted)} />
         </div>
         <div
           className={cn(
-            'flex items-center space-x-2 rounded-md p-2 shadow-sm bg-white',
+            'flex items-center gap-2 rounded-md p-2 shadow-sm bg-white',
             card,
           )}
         >
@@ -157,7 +167,7 @@ const ThemePreview = ({ base, card, muted, accent }: ThemePreviewProps) => {
         </div>
         <div
           className={cn(
-            'flex items-center space-x-2 rounded-md p-2 shadow-sm bg-white',
+            'flex items-center gap-2 rounded-md p-2 shadow-sm bg-white',
             card,
           )}
         >

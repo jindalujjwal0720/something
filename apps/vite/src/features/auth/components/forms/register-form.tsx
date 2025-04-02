@@ -94,7 +94,7 @@ const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-6"
+            className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6"
           >
             <FormField
               control={form.control}

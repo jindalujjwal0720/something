@@ -80,7 +80,10 @@ const Verify2faAuthenticatorForm = ({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-12"
+          >
             <FormField
               control={form.control}
               name="otp"

@@ -61,7 +61,10 @@ const RegenerateBackupCodesForm = () => {
         <RecoveryCodes recoveryCodes={recoveryCodes} />
       )}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-8"
+        >
           <FormField
             control={form.control}
             name="password"
@@ -83,7 +86,9 @@ const RegenerateBackupCodesForm = () => {
               </FormItem>
             )}
           />
-          <Button type="submit">Regenerate backup codes</Button>
+          <div className="flex gap-4">
+            <Button type="submit">Regenerate backup codes</Button>
+          </div>
         </form>
       </Form>
     </>

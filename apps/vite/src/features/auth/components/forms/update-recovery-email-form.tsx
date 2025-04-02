@@ -57,7 +57,10 @@ const UpdateRecoveryEmailForm = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-8"
+      >
         <FormField
           control={form.control}
           name="recoveryEmail"
@@ -98,7 +101,9 @@ const UpdateRecoveryEmailForm = () => {
             </FormItem>
           )}
         />
-        <Button type="submit">Update recovery email</Button>
+        <div className="flex gap-4">
+          <Button type="submit">Update recovery email</Button>
+        </div>
       </form>
     </Form>
   );

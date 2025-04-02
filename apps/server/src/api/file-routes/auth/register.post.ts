@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import Joi from 'joi';
 import { ConflictError } from '../../../utils/errors';
-import { IAccount } from '../../../types/models/account';
+import { IAccount, SanitisedAccount } from '../../../types/models/account';
 import { EventBus } from '../../../events/bus';
 import Account from '../../../models/account';
 import {
@@ -44,12 +44,12 @@ const validatorMiddleware = celebrate({
 async function register(
   userInfo: Partial<IUser>,
   accountInfo: Pick<IAccount, 'email'> & { password: string },
-): Promise<void> {
+): Promise<{ account: SanitisedAccount }> {
   const existingAccount = await Account.findOne({
     email: accountInfo.email,
   });
   if (existingAccount) {
-    throw new ConflictError('User with this email already exists');
+    throw new ConflictError('Account with this email already exists');
   }
 
   const hashedPassword = await hashPassword(accountInfo.password);
@@ -84,14 +84,16 @@ async function register(
   EventBus.auth.emit(AuthenticationEvent.REGISTERED, {
     user: { name: createdUser.name, email: sanitisedAccount.email },
   });
+
+  return { account: sanitisedAccount };
 }
 
 const registerHandler: RequestHandler = async (req, res, next) => {
   try {
     const { user, account } = req.body;
-    await register(user, account);
+    const { account: createdAccount } = await register(user, account);
 
-    res.status(201).send();
+    res.status(201).json({ account: createdAccount });
   } catch (err) {
     next(err);
   }

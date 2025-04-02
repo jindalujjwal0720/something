@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardHeader,
@@ -25,10 +26,10 @@ import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/utils/errors';
 import { toast } from 'sonner';
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
-import { Link } from 'react-router-dom';
 import { useLoginWithRecoveryCodeMutation } from '../../api/auth';
 import { Verify2faTotpResponse } from '../../types/api/auth';
-import useQueryParam from '@/hooks/useQueryParam';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 const verifyRecoveryCodeFormSchema = z.object({
   code: z.string().length(8, 'Recovery code must be 8 characters'),
@@ -43,7 +44,8 @@ interface VerifyRecoveryCodeFormProps {
 }
 
 const VerifyRecoveryCodeForm = ({ onSuccess }: VerifyRecoveryCodeFormProps) => {
-  const token = useQueryParam('token');
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
   const form = useForm<VerifyRecoveryCodeFormValues>({
     resolver: zodResolver(verifyRecoveryCodeFormSchema),
     defaultValues: {
@@ -117,11 +119,11 @@ const VerifyRecoveryCodeForm = ({ onSuccess }: VerifyRecoveryCodeFormProps) => {
         </Form>
         <div className="mt-4 text-center text-sm">
           Choose a{' '}
-          <Link to={`/auth/2fa?token=${token}`} className="underline">
+          <Link href={`/auth/2fa?token=${token}`} className="underline">
             different method
           </Link>{' '}
           or go back to{' '}
-          <Link to="/auth/login" className="underline">
+          <Link href="/auth/login" className="underline">
             login
           </Link>
         </div>

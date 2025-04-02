@@ -23,7 +23,9 @@ export interface RegisterDTO {
   };
 }
 
-export type RegisterResponse = void;
+export type RegisterResponse = {
+  account: SanitisedAccount;
+};
 
 export interface LoginDTO {
   account: {

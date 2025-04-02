@@ -7,18 +7,19 @@ import {
   CardDescription,
   CardFooter,
 } from '@/components/ui/card';
-import useQueryParam from '@/hooks/useQueryParam';
 import {
   EnvelopeClosedIcon,
   LockClosedIcon,
   MobileIcon,
 } from '@radix-ui/react-icons';
-import { Link } from 'react-router-dom';
 import { useGet2FALoginMethodsQuery } from '../../api/auth';
 import { getErrorMessage } from '@/utils/errors';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 const Choose2FALoginMethodForm = () => {
-  const token = useQueryParam('token');
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
   const {
     data: { methods } = {},
     isLoading,
@@ -44,7 +45,7 @@ const Choose2FALoginMethodForm = () => {
           )}
           {methods?.includes('totp') && (
             <Link
-              to={`/auth/2fa/totp?token=${token}`}
+              href={`/auth/2fa/totp?token=${token}`}
               className="flex gap-4 px-3 py-4 rounded-md hover:bg-muted cursor-pointer"
             >
               <MobileIcon className="w-6 h-max" />
@@ -58,7 +59,7 @@ const Choose2FALoginMethodForm = () => {
           )}
           {methods?.includes('otp') && (
             <Link
-              to={`/auth/2fa/otp?token=${token}`}
+              href={`/auth/2fa/otp?token=${token}`}
               className="flex gap-4 px-3 py-4 rounded-md hover:bg-muted cursor-pointer"
             >
               <EnvelopeClosedIcon className="w-5" />
@@ -72,7 +73,7 @@ const Choose2FALoginMethodForm = () => {
           )}
           {methods?.includes('recovery-email') && (
             <Link
-              to={`/auth/2fa/recovery/email?token=${token}`}
+              href={`/auth/2fa/recovery/email?token=${token}`}
               className="flex gap-4 px-3 py-4 rounded-md hover:bg-muted cursor-pointer"
             >
               <EnvelopeClosedIcon className="w-5" />
@@ -86,7 +87,7 @@ const Choose2FALoginMethodForm = () => {
           )}
           {methods?.includes('recovery') && (
             <Link
-              to={`/auth/2fa/recovery?token=${token}`}
+              href={`/auth/2fa/recovery?token=${token}`}
               className="flex gap-4 px-3 py-4 rounded-md hover:bg-muted cursor-pointer"
             >
               <LockClosedIcon className="w-5" />
@@ -103,7 +104,7 @@ const Choose2FALoginMethodForm = () => {
       <CardFooter>
         <div className="text-center text-sm">
           Go back to{' '}
-          <Link to="/auth/login" className="underline">
+          <Link href="/auth/login" className="underline">
             login page
           </Link>
         </div>

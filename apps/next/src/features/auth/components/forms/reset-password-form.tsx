@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -19,9 +20,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Link, Navigate } from 'react-router-dom';
 import { useResetPasswordMutation } from '../../api/auth';
 import { getErrorMessage } from '@/utils/errors';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 const resetPasswordFormSchema = z
   .object({
@@ -60,7 +62,8 @@ const ResetPasswordForm = ({ token, email }: ResetPasswordFormProps) => {
   const [resetPassword] = useResetPasswordMutation();
 
   if (!token || !email) {
-    return <Navigate to="/" />;
+    toast.error('Invalid token or email');
+    redirect('/');
   }
 
   const onSubmit = async (data: ResetPasswordFormValues) => {
@@ -130,7 +133,7 @@ const ResetPasswordForm = ({ token, email }: ResetPasswordFormProps) => {
         </Form>
         <div className="mt-4 text-center text-sm">
           Remember your password?{' '}
-          <Link to="/auth/login" className="underline">
+          <Link href="/auth/login" className="underline">
             Log in
           </Link>
         </div>

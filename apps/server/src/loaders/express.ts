@@ -2,6 +2,7 @@ import express, { Response } from 'express';
 import cookieParser from 'cookie-parser';
 import { env } from '../config';
 import helmet from 'helmet';
+import cors from 'cors';
 import compression from 'compression';
 import { logger } from '../utils/logger';
 import * as useragent from 'express-useragent';
@@ -23,7 +24,8 @@ const expressLoader = async ({ app }: { app: express.Application }) => {
   app.use(cookieParser());
 
   // Set security headers
-  // 1. Content Security Policy with a nonce
+  app.use(cors({ origin: env.client.url, credentials: true }));
+  // Content Security Policy with a nonce
   app.use((req, res, next) => {
     res.locals.cspNonce = crypto.randomBytes(16).toString('hex');
     next();

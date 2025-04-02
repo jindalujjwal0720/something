@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -19,10 +20,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import useQueryParam from '@/hooks/useQueryParam';
 import { useRequestResetPasswordMutation } from '../../api/auth';
 import { getErrorMessage } from '@/utils/errors';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 const forgotPasswordFormSchema = z.object({
   email: z.string().email(),
@@ -31,7 +32,8 @@ const forgotPasswordFormSchema = z.object({
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordFormSchema>;
 
 const ForgotPasswordForm = () => {
-  const email = useQueryParam('email');
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email');
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordFormSchema),
     defaultValues: {
@@ -82,7 +84,7 @@ const ForgotPasswordForm = () => {
         </Form>
         <div className="mt-4 text-center text-sm">
           Remember your password?{' '}
-          <Link to="/auth/login" className="underline">
+          <Link href="/auth/login" className="underline">
             Log in
           </Link>
         </div>

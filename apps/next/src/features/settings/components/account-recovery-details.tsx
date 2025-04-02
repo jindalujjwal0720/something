@@ -1,3 +1,4 @@
+'use client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -8,11 +9,11 @@ import {
 } from '@/components/ui/card';
 import { useAuth } from '@/features/auth/components/auth-provider';
 import { CheckCircledIcon } from '@radix-ui/react-icons';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 
 const AccountRecoveryDetails = () => {
   const { account } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <Card>
@@ -40,7 +41,7 @@ const AccountRecoveryDetails = () => {
             </div>
             <Button
               variant="ghost"
-              onClick={() => navigate('/settings/security/recovery/email')}
+              onClick={() => router.push('/settings/security/recovery/email')}
             >
               {account?.recoveryDetails?.email ? 'Change' : 'Add'} recovery
               email
@@ -58,7 +59,7 @@ const AccountRecoveryDetails = () => {
             </div>
             <Button
               variant="ghost"
-              onClick={() => navigate('/settings/security/recovery/codes')}
+              onClick={() => router.push('/settings/security/recovery/codes')}
             >
               {typeof account?.recoveryDetails?.backupCodesUsedCount !==
               'undefined'

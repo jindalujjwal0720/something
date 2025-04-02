@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev": "vite",
     "build": "npm run build:client && npm run build:ssr",
     "build:client": "vite build --outDir dist/client",
     "build:ssr": "vite build --ssr src/entry-server.tsx --outDir dist/ssr",

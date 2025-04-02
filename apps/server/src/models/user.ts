@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema<IUser>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Account',
       required: true,
+      unique: true,
     },
     name: { type: String, required: true, minlength: 3, maxlength: 50 },
     imageUrl: { type: String },

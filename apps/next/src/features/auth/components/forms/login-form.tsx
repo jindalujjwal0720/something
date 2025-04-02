@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -24,6 +25,7 @@ import { getErrorMessage } from '@/utils/errors';
 import { toast } from 'sonner';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Show } from '@/components/show';
 
 const loginFormSchema = z.object({
   email: z.string().email(),
@@ -39,7 +41,7 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ onSuccess }: LoginFormProps) => {
-  const message = useSearchParams().get('message');
+  const action = useSearchParams().get('action');
   const email = useSearchParams().get('email');
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -70,10 +72,18 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
     <Card className="w-full max-w-sm">
       <CardHeader>
         <CardTitle className="text-2xl">Login</CardTitle>
-        <CardDescription>
-          {message ||
-            'Enter your email and password to login and add your account.'}
-        </CardDescription>
+        <Show when={action === 'verify_email'}>
+          <CardDescription className="bg-muted p-2 rounded-md">
+            Your account has been created. Please{' '}
+            <span className="font-medium">verify your email address</span> to
+            login.
+          </CardDescription>
+        </Show>
+        <Show when={!action}>
+          <CardDescription>
+            Enter your email and password to login and add your account.
+          </CardDescription>
+        </Show>
       </CardHeader>
       <CardContent>
         <Form {...form}>

@@ -1,7 +1,8 @@
+'use client';
 import { buttonVariants } from '@/components/ui/button';
-import usePathname from '@/hooks/usePathname';
 import { cn } from '@/utils/tw';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface NavItem {
   href: string;
@@ -30,7 +31,7 @@ const SidebarNav = ({ items, className, ...props }: SidebarNavProps) => {
       {items.map((item) => (
         <Link
           key={item.href}
-          to={item.href}
+          href={item.href}
           className={cn(
             buttonVariants({ variant: 'ghost' }),
             activeNavItem.href === item.href ? 'bg-muted hover:bg-muted' : '',

@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardHeader,
@@ -27,10 +28,10 @@ import { toast } from 'sonner';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { Verify2faOtpResponse } from '../../types/api/auth';
 import useTimer from '../../hooks/useTimer';
-import { Link } from 'react-router-dom';
 import { convertDurationToReadable } from '@/utils/time';
-import useQueryParam from '@/hooks/useQueryParam';
 import { useCallback } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 const verify2faOtpSchema = z.object({
   otp: z.string().length(6, {
@@ -45,7 +46,8 @@ interface Verify2FAOTPFormProps {
 }
 
 const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
-  const token = useQueryParam('token');
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
   const form = useForm<Verify2FAOTPFormValues>({
     resolver: zodResolver(verify2faOtpSchema),
     defaultValues: {
@@ -137,11 +139,11 @@ const Verify2FAOTPForm = ({ onSuccess }: Verify2FAOTPFormProps) => {
         </div>
         <div className="mt-4 text-center text-sm">
           Choose a{' '}
-          <Link to={`/auth/2fa?token=${token}`} className="underline">
+          <Link href={`/auth/2fa?token=${token}`} className="underline">
             different method
           </Link>{' '}
           or go back to{' '}
-          <Link to="/auth/login" className="underline">
+          <Link href="/auth/login" className="underline">
             login
           </Link>
         </div>

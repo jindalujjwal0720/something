@@ -19,11 +19,7 @@ const LoginPage = () => {
     }
   };
 
-  return (
-    <div className="flex items-center justify-center h-screen">
-      <LoginForm onSuccess={handleSuccessfulLogin} />
-    </div>
-  );
+  return <LoginForm onSuccess={handleSuccessfulLogin} />;
 };
 
 export default LoginPage;

@@ -152,7 +152,7 @@ const loginHandler: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    const { accessToken, refreshToken } = response;
+    const { accessToken, refreshToken, account: sanitisedAccount } = response;
     const {
       [env.auth.accountChooserCookieName]: existingAccountChooserCookie,
     } = req.cookies;
@@ -184,7 +184,7 @@ const loginHandler: RequestHandler = async (req, res, next) => {
         refreshToken,
         generateRefreshTokenCookieOptions(),
       )
-      .json({ token: accessToken });
+      .json({ token: accessToken, account: sanitisedAccount });
   } catch (err) {
     next(err);
   }

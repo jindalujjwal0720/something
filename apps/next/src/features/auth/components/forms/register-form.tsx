@@ -1,3 +1,4 @@
+'use client';
 import {
   Card,
   CardContent,
@@ -18,11 +19,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 import { useRegisterMutation } from '../../api/auth';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/utils/errors';
 import { RegisterResponse } from '../../types/api/auth';
+import Link from 'next/link';
 
 const registerFormSchema = z
   .object({
@@ -167,7 +168,7 @@ const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
         </Form>
         <div className="mt-4 text-center text-sm">
           Already have an account?{' '}
-          <Link to="/auth/login" className="underline">
+          <Link href="/auth/login" className="underline">
             Log in
           </Link>
         </div>

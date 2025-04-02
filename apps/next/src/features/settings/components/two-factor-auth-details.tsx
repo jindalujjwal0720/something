@@ -1,3 +1,4 @@
+'use client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -7,11 +8,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useAuth } from '@/features/auth/components/auth-provider';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 
 const TwoFactorAuthenticationDetails = () => {
   const { account } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   return (
     <Card>
@@ -32,7 +33,7 @@ const TwoFactorAuthenticationDetails = () => {
               </h4>
             </div>
             <Button
-              onClick={() => navigate('/settings/security/2fa')}
+              onClick={() => router.push('/settings/security/2fa')}
               variant={account?.twoFactorAuth?.enabled ? 'ghost' : 'default'}
             >
               {account?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'}
@@ -50,7 +51,7 @@ const TwoFactorAuthenticationDetails = () => {
             <Button
               variant="ghost"
               disabled={!account?.twoFactorAuth?.enabled}
-              onClick={() => navigate('/settings/security/authenticator')}
+              onClick={() => router.push('/settings/security/authenticator')}
             >
               {account?.twoFactorAuth?.totp?.enabled ? 'Enabled' : 'Setup'}
             </Button>

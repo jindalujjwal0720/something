@@ -74,7 +74,10 @@ const SetupTwoFactorAuthenticationForm = () => {
         <RecoveryCodes recoveryCodes={recoveryCodes} />
       )}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-8"
+        >
           <FormField
             control={form.control}
             name="password"
@@ -92,15 +95,18 @@ const SetupTwoFactorAuthenticationForm = () => {
               </FormItem>
             )}
           />
-          <Button
-            type="submit"
-            variant={
-              account?.twoFactorAuth?.enabled ? 'destructive' : 'default'
-            }
-          >
-            {account?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'} two-factor
-            authentication
-          </Button>
+          <div className="flex gap-4 flex-col md:flex-row">
+            <Button
+              type="submit"
+              variant={
+                account?.twoFactorAuth?.enabled ? 'destructive' : 'default'
+              }
+              className="w-max"
+            >
+              {account?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'}{' '}
+              two-factor authentication
+            </Button>
+          </div>
         </form>
       </Form>
     </>

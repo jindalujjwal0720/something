@@ -80,8 +80,8 @@ const Profile = () => {
             )}
           </PopoverTrigger>
           <PopoverContent>
-            <div className="divide-y-2 space-y-4">
-              <div className="flex items-center gap-2">
+            <div className="divide-y-2 flex flex-col gap-4">
+              <div className="flex items-center gap-2 pb-4">
                 <Avatar className="size-9">
                   <AvatarImage src={user?.imageUrl} alt={user?.name} />
                   <AvatarFallback className="bg-muted-foreground text-background">
@@ -97,7 +97,7 @@ const Profile = () => {
               </div>
               <div>
                 {account?.roles && account.roles.length > 1 && (
-                  <div className="pt-4 space-y-4">
+                  <div className="flex flex-col gap-4">
                     {account?.roles
                       .filter((role) => role !== currentUserRole)
                       .map((role) => (
@@ -111,7 +111,7 @@ const Profile = () => {
                       ))}
                   </div>
                 )}
-                <div className="pt-4">
+                <div className="pb-4">
                   <Link
                     href="/settings"
                     className="block text-sm hover:text-blue-500"
@@ -120,7 +120,7 @@ const Profile = () => {
                   </Link>
                 </div>
               </div>
-              <div className="pt-2">
+              <div className="">
                 <Button
                   variant="ghost"
                   className="w-full"

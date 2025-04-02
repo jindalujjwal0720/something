@@ -33,7 +33,7 @@ Clean, maintainable code is the dream.
 - **Bulletproof Structure**: Organize your code into modular repositories, making it easy to manage and expand.
 - **Shared Codebase**: Share code between the frontend and backend, ensuring consistency and reducing duplication.
 
-### **Vite & Node.js**
+### **Next, Vite & Node.js**
 
 Say goodbye to long build times!
 
@@ -105,11 +105,14 @@ Ready to embark on your development journey? Here’s how to get started:
 
    ```bash
    # Development mode
-   npm run dev
+   npm run dev:server
+   npm run dev:vite # for Vite
+   npm run dev:next # for Next.js
 
    # Production mode
-   npm run build
-   npm start
+   npm run build:server
+   npm run build:vite # for Vite
+   npm run build:next # for Next.js
    ```
 
 5. **Open your browser** and navigate to `http://localhost:6969` to see your app in action!

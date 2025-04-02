@@ -99,7 +99,7 @@ const ChangePasswordForm = ({ onSuccess }: ChangePasswordFormProps) => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-6 flex-1"
+              className="flex flex-col gap-6 flex-1"
             >
               <FormField
                 control={form.control}
@@ -152,7 +152,7 @@ const ChangePasswordForm = ({ onSuccess }: ChangePasswordFormProps) => {
                   </FormItem>
                 )}
               />
-              <div className="flex space-x-4">
+              <div className="flex gap-4">
                 <Button type="submit">Update password</Button>
                 <Button variant="outline" onClick={onFormReset}>
                   Cancel
@@ -161,7 +161,7 @@ const ChangePasswordForm = ({ onSuccess }: ChangePasswordFormProps) => {
             </form>
           </Form>
           <div className="w-max max-w-52">
-            <div className="rounded-lg bg-muted p-4 space-y-3">
+            <div className="rounded-lg bg-muted p-4 flex flex-col gap-3">
               <h3 className="text-sm font-medium">Password requirements</h3>
               <p className="text-xs">
                 Your password must meet the following requirements:

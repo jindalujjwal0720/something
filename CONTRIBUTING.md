@@ -86,7 +86,9 @@ Ready to embark on your development journey? Here’s how to get started:
 
    ```bash
    # Development mode
-   npm run dev
+   npm run dev:server
+   npm run dev:vite # for Vite
+   npm run dev:next # for Next.js
    ```
 
 5. **Open your browser** and navigate to `http://localhost:6969` to see your app in action!

@@ -1,3 +1,4 @@
+'use client';
 import Verify2FARecoveryOTPForm from '@/features/auth/components/forms/verify-2fa-recovery-otp-form';
 import { setAccessToken, setRole } from '@/features/auth/stores/auth';
 import { Verify2faOtpResponse } from '@/features/auth/types/api/auth';

@@ -69,7 +69,10 @@ const Setup2faAuthenticatorForm = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-8"
+      >
         {!isLoading ? (
           otpAuthUrl && (
             <>
@@ -105,11 +108,13 @@ const Setup2faAuthenticatorForm = () => {
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={isLoading || isRegeneratingTotp}>
-          {account?.twoFactorAuth?.totp.enabled
-            ? 'Re-generate QR code'
-            : 'Generate QR code'}
-        </Button>
+        <div className="flex gap-4 flex-col md:flex-row">
+          <Button type="submit" disabled={isLoading || isRegeneratingTotp}>
+            {account?.twoFactorAuth?.totp.enabled
+              ? 'Re-generate QR code'
+              : 'Generate QR code'}
+          </Button>
+        </div>
       </form>
     </Form>
   );

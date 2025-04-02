@@ -25,9 +25,9 @@ const AccountRecoveryDetails = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="divide-y-2 space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-1">
+        <div className="divide-y-2 flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-4 pb-4">
+            <div className="flex flex-col gap-1">
               <h4 className="text-sm font-medium">Recovery email address</h4>
               <p className="text-sm text-muted-foreground flex gap-1 items-center">
                 <span>
@@ -47,8 +47,8 @@ const AccountRecoveryDetails = () => {
               email
             </Button>
           </div>
-          <div className="flex pt-4 items-center justify-between gap-4">
-            <div className="space-y-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1">
               <h4 className="text-sm font-medium">Backup codes</h4>
               <p className="text-sm text-muted-foreground">
                 {typeof account?.recoveryDetails?.backupCodesUsedCount !==

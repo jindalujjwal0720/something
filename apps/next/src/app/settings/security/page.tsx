@@ -4,7 +4,7 @@ import TwoFactorAuthenticationDetails from '@/features/settings/components/two-f
 
 const Security = () => {
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-8">
       <div>
         <h3 className="text-lg font-medium">Security</h3>
         <p className="text-sm text-muted-foreground">

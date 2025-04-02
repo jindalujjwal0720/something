@@ -171,7 +171,7 @@ function FeatureCard({
   className,
 }: FeatureCardProps) {
   return (
-    <Card className={cn('hover:shadow-lg', className)}>
+    <Card className={cn('hover:shadow-sm-lg', className)}>
       <CardHeader className={features.length > 0 ? 'mb-0' : 'mb-6'}>
         <div className="text-primary mb-4">{icon}</div>
         <CardTitle>{title}</CardTitle>
@@ -179,7 +179,7 @@ function FeatureCard({
       </CardHeader>
       {features.length > 0 && (
         <CardContent>
-          <ul className="space-y-2 text-muted-foreground">
+          <ul className="flex flex-col gap-2 text-muted-foreground">
             {features.map((feature, index) => (
               <li key={index} className="flex text-sm">
                 <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-green-500 mr-2" />

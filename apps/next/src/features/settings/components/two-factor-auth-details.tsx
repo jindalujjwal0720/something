@@ -25,9 +25,9 @@ const TwoFactorAuthenticationDetails = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="divide-y-2 space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-1">
+        <div className="divide-y-2 flex flex-col gap-4">
+          <div className="pb-4 flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1">
               <h4 className="text-sm font-medium">
                 Enable two-factor authentication
               </h4>
@@ -39,8 +39,8 @@ const TwoFactorAuthenticationDetails = () => {
               {account?.twoFactorAuth?.enabled ? 'Disable' : 'Enable'}
             </Button>
           </div>
-          <div className="flex pt-4 items-center justify-between gap-4">
-            <div className="space-y-1">
+          <div className="pb-4 flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1">
               <h4 className="text-sm font-medium">
                 Authenticator apps (recommended)
               </h4>
@@ -56,8 +56,8 @@ const TwoFactorAuthenticationDetails = () => {
               {account?.twoFactorAuth?.totp?.enabled ? 'Enabled' : 'Setup'}
             </Button>
           </div>
-          <div className="flex pt-4 items-center justify-between gap-4">
-            <div className="space-y-1">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-1">
               <h4 className="text-sm font-medium">Email one-time passwords</h4>
               <p className="text-sm text-muted-foreground">
                 Default method for two-factor authentication.

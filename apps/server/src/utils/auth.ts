@@ -5,6 +5,7 @@ import {
   IRefreshToken,
   IAccount,
   SanitisedAccount,
+  IBackupCode,
 } from '../types/models/account';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -42,29 +43,33 @@ export function generateEmailVerificationToken(payload: TokenPayload): string {
 }
 
 export function excludeSensitiveFields(account: IAccount): SanitisedAccount {
+  //create a copy of the account object to avoid mutating the original object
+  const accountCopy = JSON.parse(JSON.stringify(account)) as IAccount;
   // Sensitive fields
-  delete account.passwordHash;
-  delete account.emailVerificationToken;
-  delete account.emailVerificationTokenExpires;
-  delete account.resetPasswordToken;
-  delete account.resetPasswordTokenExpires;
-  delete account.refreshTokens;
+  delete accountCopy.passwordHash;
+  delete accountCopy.emailVerificationToken;
+  delete accountCopy.emailVerificationTokenExpires;
+  delete accountCopy.resetPasswordToken;
+  delete accountCopy.resetPasswordTokenExpires;
+  delete accountCopy.refreshTokens;
 
   // 2FA sensitive fields
-  if (account.twoFactorAuth?.otp) {
-    account.twoFactorAuth.otp.hash = undefined;
-    account.twoFactorAuth.otp.expires = undefined;
+  if (accountCopy.twoFactorAuth?.otp) {
+    accountCopy.twoFactorAuth.otp.hash = undefined;
+    accountCopy.twoFactorAuth.otp.expires = undefined;
   }
-  if (account.twoFactorAuth?.totp) {
-    account.twoFactorAuth.totp.secret = undefined;
+  if (accountCopy.twoFactorAuth?.totp) {
+    accountCopy.twoFactorAuth.totp.secret = undefined;
   }
   // Recovery details
-  if (account.recoveryDetails) {
-    account.recoveryDetails.backupCodesUsedCount =
-      account.recoveryDetails.backupCodes.filter((code) => code.usedAt).length;
-    account.recoveryDetails.backupCodes = [];
+  if (accountCopy.recoveryDetails) {
+    accountCopy.recoveryDetails.backupCodesUsedCount =
+      accountCopy.recoveryDetails.backupCodes.filter(
+        (code: IBackupCode) => code.usedAt,
+      ).length || 0;
+    accountCopy.recoveryDetails.backupCodes = [];
   }
-  return account as SanitisedAccount;
+  return accountCopy as SanitisedAccount;
 }
 
 export async function generate2FAAccessToken(

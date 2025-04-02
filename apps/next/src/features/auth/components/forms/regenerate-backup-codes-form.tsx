@@ -55,14 +55,17 @@ const RegenerateBackupCodesForm = () => {
   return (
     <>
       <p className="text-sm text-muted-foreground">
-        {account?.recoveryDetails?.backupCodesUsedCount} backup codes used so
-        far. (Out of 10)
+        {account?.recoveryDetails?.backupCodesUsedCount ?? 'No'} backup codes
+        used so far. (Out of 10)
       </p>
       {recoveryCodes.length > 0 && (
         <RecoveryCodes recoveryCodes={recoveryCodes} />
       )}
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-8"
+        >
           <FormField
             control={form.control}
             name="password"
@@ -84,7 +87,9 @@ const RegenerateBackupCodesForm = () => {
               </FormItem>
             )}
           />
-          <Button type="submit">Regenerate backup codes</Button>
+          <div className="flex gap-4 md:flex-row flex-col">
+            <Button type="submit">Regenerate backup codes</Button>
+          </div>
         </form>
       </Form>
     </>

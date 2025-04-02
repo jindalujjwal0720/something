@@ -15,7 +15,7 @@ const Navbar = ({ variant }: NavbarProps) => {
       className={cn(
         'top-0 left-0 right-0 z-50',
         variant === 'sticky' ? 'sticky' : 'fixed',
-        'bg-background shadow-sm py-1 px-4',
+        'bg-background shadow-xs py-1 px-4',
       )}
     >
       <div className="max-w-[1400px] mx-auto flex items-center gap-4 justify-between">

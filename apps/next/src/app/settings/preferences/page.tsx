@@ -2,7 +2,7 @@ import PreferencesForm from '@/features/settings/components/forms/preferences-fo
 
 const PreferencesPage = () => {
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <div>
         <h3 className="text-lg font-medium">Preferences</h3>
         <p className="text-sm text-muted-foreground">

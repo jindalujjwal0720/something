@@ -1,3 +1,4 @@
+'use client';
 import VerifyRecoveryCodeForm from '@/features/auth/components/forms/verfiy-recovery-code-form';
 import { setAccessToken, setRole } from '@/features/auth/stores/auth';
 import { Verify2faOtpResponse } from '@/features/auth/types/api/auth';

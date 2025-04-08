@@ -21,8 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import useQueryParam from '@/hooks/useQueryParam';
-import { useRequestResetPasswordMutation } from '../../api/auth';
 import { getErrorMessage } from '@/utils/errors';
+import { authClient } from '@/utils/auth-client';
 
 const forgotPasswordFormSchema = z.object({
   email: z.string().email(),
@@ -38,17 +38,22 @@ const ForgotPasswordForm = () => {
       email: email || '',
     },
   });
-  const [requestResetPassword] = useRequestResetPasswordMutation();
 
   const onSubmit = async (data: ForgotPasswordFormValues) => {
-    try {
-      const payload = await requestResetPassword({
-        account: data,
-      }).unwrap();
-      toast.success(payload.message);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
+    await authClient.forgetPassword(
+      {
+        email: data.email,
+        redirectTo: `${window.location.origin}/auth/reset-password?email=${data.email}`,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Password reset link sent to your email address');
+        },
+        onError: (ctx) => {
+          toast.error(getErrorMessage(ctx.error));
+        },
+      },
+    );
   };
 
   return (

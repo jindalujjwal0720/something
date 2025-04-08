@@ -1,23 +1,24 @@
 import { createContext, PropsWithChildren, useContext, useMemo } from 'react';
-import { useGetMeQuery } from '../api/auth';
-import { IUser } from '@/types/models/user';
-import { SanitisedAccount } from '@/types/models/account';
+import { authClient, Session } from '@/utils/auth-client';
 
 interface AuthContextValue {
-  user: IUser | undefined;
-  account: SanitisedAccount | undefined;
+  session: Session | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-  const { data: { user, account } = {}, isLoading } = useGetMeQuery();
+  const { data: session, isPending } = authClient.useSession();
 
-  const value = useMemo(
-    () => ({ user, account, isLoading }),
-    [user, account, isLoading],
-  );
+  const value = useMemo(() => {
+    return {
+      session,
+      isLoading: isPending,
+      isAuthenticated: !!session,
+    };
+  }, [session, isPending]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

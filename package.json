@@ -22,7 +22,8 @@
     "dev:next": "cd apps/next && npm run dev",
     "build:next": "cd apps/next && npm run build",
     "start:next": "cd apps/next && npm run start",
-    "lint:next": "cd apps/next && npm run lint"
+    "lint:next": "cd apps/next && npm run lint",
+    "dev:serv": "cd apps/serv && npm run dev"
   },
   "dependencies": {
     "copyfiles": "^2.4.1"

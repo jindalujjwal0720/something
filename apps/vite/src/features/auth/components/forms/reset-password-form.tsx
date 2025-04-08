@@ -19,9 +19,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Link, Navigate } from 'react-router-dom';
-import { useResetPasswordMutation } from '../../api/auth';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { getErrorMessage } from '@/utils/errors';
+import { authClient } from '@/utils/auth-client';
 
 const resetPasswordFormSchema = z
   .object({
@@ -57,25 +57,31 @@ const ResetPasswordForm = ({ token, email }: ResetPasswordFormProps) => {
       confirmPassword: '',
     },
   });
-  const [resetPassword] = useResetPasswordMutation();
+  const navigate = useNavigate();
 
   if (!token || !email) {
     return <Navigate to="/" />;
   }
 
   const onSubmit = async (data: ResetPasswordFormValues) => {
-    try {
-      const payload = await resetPassword({
-        account: {
-          email: email || '',
-          currentPasswordOrToken: token,
-          newPassword: data.newPassword,
+    await authClient.resetPassword(
+      {
+        token,
+        newPassword: data.newPassword,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Password reset successfully, you can now log in');
+          navigate('/auth/login', {
+            state: { email },
+            replace: true,
+          });
         },
-      }).unwrap();
-      toast.success(payload.message);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
+        onError: (ctx) => {
+          toast.error(getErrorMessage(ctx.error));
+        },
+      },
+    );
   };
 
   return (

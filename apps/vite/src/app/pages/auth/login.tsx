@@ -1,6 +1,7 @@
-import LoginForm from '@/features/auth/components/forms/login-form';
-import { setAccessToken, setRole } from '@/features/auth/stores/auth';
-import { LoginResponse } from '@/features/auth/types/api/auth';
+import LoginForm, {
+  LoginResponse,
+} from '@/features/auth/components/forms/login-form';
+import { setAccessToken } from '@/features/auth/stores/auth';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,7 +14,6 @@ const Login = () => {
       navigate(`/auth/2fa?token=${data.token}`);
     } else {
       dispatch(setAccessToken(data.token));
-      dispatch(setRole(data.account.roles[0]));
       navigate('/');
     }
   };

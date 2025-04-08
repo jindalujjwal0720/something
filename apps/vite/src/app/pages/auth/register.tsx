@@ -1,11 +1,13 @@
-import RegisterForm from '@/features/auth/components/forms/register-form';
-import { RegisterResponse } from '@/features/auth/types/api/auth';
+import RegisterForm, {
+  type RegisterResponse,
+} from '@/features/auth/components/forms/register-form';
 import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const navigate = useNavigate();
 
   const handleSuccess = (data: RegisterResponse) => {
+    console.log('Registration successful:', data);
     // Redirect to login page
     navigate('/auth/login', {
       state: {

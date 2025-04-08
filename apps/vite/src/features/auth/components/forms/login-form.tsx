@@ -20,10 +20,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import useLocationState from '@/hooks/useLocationState';
-import { LoginResponse } from '../../types/api/auth';
-import { useLoginMutation } from '../../api/auth';
 import { getErrorMessage } from '@/utils/errors';
 import { toast } from 'sonner';
+import { useState } from 'react';
+import { authClient, Session } from '@/utils/auth-client';
 
 const loginFormSchema = z.object({
   email: z.string().email(),
@@ -33,6 +33,8 @@ const loginFormSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
+
+export type LoginResponse = { token: string; user: Session['user'] };
 
 interface LoginFormProps {
   onSuccess?: (data: LoginResponse) => void;
@@ -48,22 +50,26 @@ const LoginForm = ({ onSuccess }: LoginFormProps) => {
       password: '',
     },
   });
-  const [loginUser, { isLoading }] = useLoginMutation();
+  const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (data: LoginFormValues) => {
-    try {
-      const payload = await loginUser({
-        account: {
-          email: data.email,
-          password: data.password,
+    setIsLoading(true);
+    await authClient.signIn.email(
+      {
+        email: data.email,
+        password: data.password,
+      },
+      {
+        onSuccess: (ctx) => {
+          onSuccess?.(ctx.data);
+          form.reset();
         },
-      }).unwrap();
-      if (onSuccess) {
-        onSuccess(payload);
-      }
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
+        onError: (ctx) => {
+          toast.error(getErrorMessage(ctx.error));
+        },
+      },
+    );
+    setIsLoading(false);
   };
 
   return (

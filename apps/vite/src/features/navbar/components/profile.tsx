@@ -6,38 +6,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useLogoutMutation } from '@/features/auth/api/auth';
 import { useAuth } from '@/features/auth/components/auth-provider';
-import {
-  clearCredentials,
-  selectIsAuthenticated,
-  selectRole,
-  setRole,
-} from '@/features/auth/stores/auth';
-import { getErrorMessage } from '@/utils/errors';
-import { useDispatch, useSelector } from 'react-redux';
+import { authClient } from '@/utils/auth-client';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 
 const Profile = () => {
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const { user, account, isLoading: isUserLoading } = useAuth();
-  const currentUserRole = useSelector(selectRole);
-  const [logout] = useLogoutMutation();
-  const dispatch = useDispatch();
+  const { session, isAuthenticated, isLoading: isUserLoading } = useAuth();
 
   const handleLogout = async () => {
-    try {
-      await logout().unwrap();
-      dispatch(clearCredentials());
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
+    await authClient.signOut();
   };
 
-  const handleViewAs = (role: string) => {
-    dispatch(setRole(role));
-  };
   return (
     <>
       <Show when={!isAuthenticated && !isUserLoading}>
@@ -54,18 +33,17 @@ const Profile = () => {
             {!isUserLoading ? (
               <div className="flex items-center gap-2 cursor-pointer hover:bg-muted rounded-md py-1.5 px-2">
                 <Avatar className="size-7">
-                  <AvatarImage src={user?.imageUrl} alt={user?.name} />
+                  <AvatarImage
+                    src={session?.user.image ?? ''}
+                    alt={session?.user.name}
+                  />
                   <AvatarFallback className="bg-muted-foreground text-background">
-                    {user?.name[0]}
+                    {session?.user.name[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h4 className="text-sm font-semibold">
-                    {user?.name}
-                    <span className="font-normal text-muted-foreground">
-                      {' '}
-                      ({currentUserRole})
-                    </span>
+                    {session?.user.name}
                   </h4>
                 </div>
               </div>
@@ -82,34 +60,24 @@ const Profile = () => {
             <div className="divide-y-2 flex flex-col gap-4">
               <div className="flex items-center gap-2 pb-4">
                 <Avatar className="size-9">
-                  <AvatarImage src={user?.imageUrl} alt={user?.name} />
+                  <AvatarImage
+                    src={session?.user.image ?? ''}
+                    alt={session?.user.name}
+                  />
                   <AvatarFallback className="bg-muted-foreground text-background">
-                    {user?.name[0]}
+                    {session?.user.name[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="text-sm font-semibold">{user?.name}</h4>
+                  <h4 className="text-sm font-semibold">
+                    {session?.user.name}
+                  </h4>
                   <p className="text-xs text-muted-foreground">
-                    {account?.email}
+                    {session?.user.email}
                   </p>
                 </div>
               </div>
               <div>
-                {account?.roles && account.roles.length > 1 && (
-                  <div className="pb-4 flex flex-col gap-4">
-                    {account?.roles
-                      .filter((role) => role !== currentUserRole)
-                      .map((role) => (
-                        <div
-                          key={role}
-                          className="text-sm cursor-pointer hover:text-blue-500"
-                          onClick={() => handleViewAs(role)}
-                        >
-                          View as {role}
-                        </div>
-                      ))}
-                  </div>
-                )}
                 <div className="pb-4">
                   <Link
                     to="/settings"

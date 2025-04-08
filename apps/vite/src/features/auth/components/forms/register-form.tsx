@@ -19,10 +19,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { useRegisterMutation } from '../../api/auth';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/utils/errors';
-import { RegisterResponse } from '../../types/api/auth';
+import { authClient, Session } from '@/utils/auth-client';
+import { useState } from 'react';
 
 const registerFormSchema = z
   .object({
@@ -49,6 +49,8 @@ const registerFormSchema = z
 
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
+export type RegisterResponse = { token: string; user: Session['user'] };
+
 interface RegisterFormProps {
   onSuccess?: (data: RegisterResponse) => void;
 }
@@ -63,23 +65,27 @@ const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
       confirmPassword: '',
     },
   });
-  const [registerUser, { isLoading }] = useRegisterMutation();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = async (data: RegisterFormValues) => {
-    try {
-      const payload = await registerUser({
-        user: {
-          name: data.name,
-          imageUrl: undefined,
+  const onSubmit = async (payload: RegisterFormValues) => {
+    setIsLoading(true);
+    await authClient.signUp.email(
+      {
+        name: payload.name,
+        email: payload.email,
+        password: payload.password,
+      },
+      {
+        onSuccess: (ctx) => {
+          onSuccess?.(ctx.data);
+          form.reset();
         },
-        account: { email: data.email, password: data.password },
-      }).unwrap();
-      if (onSuccess instanceof Function) {
-        onSuccess(payload);
-      }
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
+        onError: (ctx) => {
+          toast.error(getErrorMessage(ctx.error));
+        },
+      },
+    );
+    setIsLoading(false);
   };
 
   return (

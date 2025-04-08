@@ -28,3 +28,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# certs
+*.pem
+*.key

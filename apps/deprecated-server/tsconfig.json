@@ -107,11 +107,5 @@
     "typeRoots": ["./src/types/extended", "./node_modules/@types"]
   },
   "include": ["src/types/**/*.d.ts", "src/**/*.ts"],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts",
-    "dist",
-    "../web/dist",
-    "./src/api/file-routes/index.ts"
-  ]
+  "exclude": ["node_modules", "**/*.spec.ts", "dist", "../web/dist"]
 }

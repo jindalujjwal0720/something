@@ -8,7 +8,16 @@ import { fixupPluginRules } from '@eslint/compat';
 import checkfilePlugin from 'eslint-plugin-check-file';
 
 const config = [
-  { ignores: ['dist', 'node_modules', 'coverage', 'build', 'public'] },
+  {
+    ignores: [
+      'dist',
+      'node_modules',
+      'coverage',
+      'build',
+      'public',
+      './src/api/file-routes/index.ts',
+    ],
+  },
   {
     files: ['src/**/*.{js,mjs,cjs,ts}'],
     languageOptions: {

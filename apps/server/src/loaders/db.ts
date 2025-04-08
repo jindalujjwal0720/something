@@ -1,4 +1,4 @@
-import { pool } from '../utils/db';
+import { pool } from '../db';
 import { logger } from '../utils/logger';
 
 const DbLoader = async () => {

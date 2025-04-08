@@ -15,10 +15,8 @@ export default {
   db: {
     endpoint: process.env.DB_ENDPOINT,
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '27017'),
+    port: process.env.DB_PORT || 27017,
     name: process.env.DB_NAME || 'something',
-    user: process.env.DB_USER,
-    pass: process.env.DB_PASS,
   },
   client: {
     url: process.env.CLIENT_URL || 'http://localhost:3000',

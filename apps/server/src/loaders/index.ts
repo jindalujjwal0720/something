@@ -1,6 +1,6 @@
 import * as express from 'express';
 import expressLoader from './express';
-import mongooseLoader from './mongoose';
+import DbLoader from './db';
 import { logger } from '../utils/logger';
 import subscribersLoader from './subscribers';
 import { errorLoader } from './error';
@@ -17,8 +17,8 @@ const initLoaders = async ({ expressApp }: InitLoadersProps) => {
   await errorLoader({ app: expressApp });
   logger.info('Error loaded');
   // Load mongoose loader
-  await mongooseLoader();
-  logger.info('MongoDB loaded');
+  await DbLoader();
+  logger.info('Database loaded');
   // Load subscribers
   await subscribersLoader();
   logger.info('Subscribers loaded');

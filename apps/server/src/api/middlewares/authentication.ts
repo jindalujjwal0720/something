@@ -1,39 +1,20 @@
 import { RequestHandler } from 'express';
-import { AppError, CommonErrors } from '../../utils/errors';
-import { generate2FAAccessToken, verifyAccessToken } from '../../utils/auth';
+import { auth } from '../../utils/auth';
+import { UnauthorizedError } from '../../utils/errors';
 
 export const requireAuthenticated: RequestHandler = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const session = await auth.api.getSession({
+      headers: new Headers(req.headers as Record<string, string>),
+    });
 
-    if (!token) {
-      throw new AppError(
-        CommonErrors.Unauthorized.name,
-        CommonErrors.Unauthorized.statusCode,
-        'Invalid access token',
-      );
+    if (!session) {
+      throw new UnauthorizedError('Unauthorized');
     }
 
-    const payload = await verifyAccessToken(token);
-    res.locals.user = payload;
-
+    res.locals.session = session;
     next();
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
-};
-
-export const requireMFAVerified: RequestHandler = async (req, res, next) => {
-  const { mfaVerified } = res.locals.user;
-
-  const token = generate2FAAccessToken(res.locals.user);
-
-  if (!mfaVerified) {
-    return res.status(CommonErrors.Unauthorized.statusCode).json({
-      requires2FA: true,
-      token,
-    });
-  }
-
-  next();
 };

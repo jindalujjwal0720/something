@@ -10,6 +10,8 @@ import crypto from 'crypto';
 import path from 'path';
 import Router from 'file-express-router';
 import { extractDeviceInfo } from '../api/middlewares/user-agent';
+import { auth } from '../utils/auth';
+import { toNodeHandler } from 'better-auth/node';
 
 const expressLoader = async ({ app }: { app: express.Application }) => {
   app.get('/status', (req, res) => {
@@ -19,12 +21,17 @@ const expressLoader = async ({ app }: { app: express.Application }) => {
     res.status(200).end();
   });
 
+  // Enable CORS for all requests
+  app.use(cors({ origin: env.client.url, credentials: true }));
+
+  // Make sure to use this before express.json() and express.urlencoded()
+  app.all('/api/v1/auth/*', toNodeHandler(auth));
+
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
   // Set security headers
-  app.use(cors({ origin: env.client.url, credentials: true }));
   // Content Security Policy with a nonce
   app.use((req, res, next) => {
     res.locals.cspNonce = crypto.randomBytes(16).toString('hex');

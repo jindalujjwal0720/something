@@ -1,7 +1,8 @@
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { env } from '../config';
 import { readFileSync } from 'fs';
 import path from 'path';
+import { env } from '../config';
 
 export const pool = new Pool({
   host: env.db.host,
@@ -11,6 +12,8 @@ export const pool = new Pool({
   database: env.db.name,
   ssl: {
     rejectUnauthorized: true,
-    ca: readFileSync(path.join(__dirname, './ca-pg.pem')).toString(),
+    ca: readFileSync(path.join(__dirname, './../../ca-pg.pem')).toString(),
   },
 });
+
+export const db = drizzle({ client: pool });

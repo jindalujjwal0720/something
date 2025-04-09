@@ -19,6 +19,7 @@ export default {
     name: process.env.DB_NAME || 'something',
     user: process.env.DB_USER,
     pass: process.env.DB_PASS,
+    sslEnabled: process.env.DB_SSL_ENABLED === 'true',
   },
   client: {
     url: process.env.CLIENT_URL || 'http://localhost:3000',

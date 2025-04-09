@@ -10,10 +10,12 @@ export const pool = new Pool({
   user: env.db.user,
   password: env.db.pass,
   database: env.db.name,
-  ssl: {
-    rejectUnauthorized: true,
-    ca: readFileSync(path.join(__dirname, './../../ca-pg.pem')).toString(),
-  },
+  ssl: env.db.sslEnabled
+    ? {
+        rejectUnauthorized: true,
+        ca: readFileSync(path.join(__dirname, './../../ca-pg.pem')).toString(),
+      }
+    : false,
 });
 
 export const db = drizzle({ client: pool });
